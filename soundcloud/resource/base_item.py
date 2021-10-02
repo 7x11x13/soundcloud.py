@@ -1,0 +1,35 @@
+import datetime
+from dataclasses import dataclass
+from typing import Optional
+
+from soundcloud.resource.base import BaseData
+from soundcloud.resource.user import BasicUser
+
+@dataclass
+class BaseItem(BaseData):
+    artwork_url: Optional[str]
+    created_at: datetime.datetime
+    description: Optional[str]
+    duration: int
+    embeddable_by: str
+    genre: str
+    id: int
+    kind: str
+    label_name: Optional[str]
+    last_modified: datetime.datetime
+    licence: Optional[str]
+    likes_count: Optional[int]
+    permalink: str
+    permalink_url: str
+    public: bool
+    purchase_title: Optional[str]
+    purchase_url: Optional[str]
+    release_date: Optional[str]
+    reposts_count: Optional[int]
+    secret_token: Optional[str]
+    sharing: str
+    tag_list: str
+    title: str
+    uri: str
+    user_id: int
+    display_date: str
