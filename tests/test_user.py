@@ -21,16 +21,19 @@ def test_user_comments(client: SoundCloud):
     assert comment.body == "hi"
     
 def test_user_conversation_messages(client: SoundCloud):
-    message = next(client.get_conversation_messages(992430331, 790976431))
+    message = next(client.get_conversation_messages(790976431, 992430331))
     assert message.content == "bye"
 
 def test_user_conversations(client: SoundCloud):
-    conversation = list(client.get_conversations(992430331))[-1]
-    assert conversation.last_message.content == "bye"
+    found = False
+    for conversation in client.get_conversations(790976431):
+        if conversation.last_message.content == "bye":
+            found = True
+    assert found
 
 def test_user_followers(client: SoundCloud):
     found = False
-    for follower in client.get_user_followers(790976431):
+    for follower in client.get_user_followers(992430331):
         if follower.permalink == "7x11x13":
             found = True
             break
@@ -69,5 +72,5 @@ def test_user_playlists(client: SoundCloud):
 
 def test_user_links(client: SoundCloud):
     user = client.get_user(992430331)
-    profiles = list(client.get_user_links(user.urn))
+    profiles = client.get_user_links(user.urn)
     assert profiles[0].title == "test"

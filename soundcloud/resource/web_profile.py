@@ -7,4 +7,7 @@ class WebProfile(BaseData):
     url: str
     network: str
     title: str
+    
+@dataclass
+class WebProfileUsername(WebProfile):
     username: str

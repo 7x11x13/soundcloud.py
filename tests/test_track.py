@@ -10,7 +10,7 @@ def test_track_albums(client: SoundCloud):
     
 def test_track_playlists(client: SoundCloud):
     found = False
-    for playlist in client.get_track_playlists(343453457):
+    for playlist in client.get_track_playlists(1032303631):
         if playlist.user.permalink == "one-thousand-and-one":
             found = True
             break

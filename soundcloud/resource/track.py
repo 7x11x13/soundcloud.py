@@ -1,3 +1,4 @@
+import datetime
 from dataclasses import dataclass
 from typing import Optional
 
@@ -69,3 +70,30 @@ class MiniTrack(BaseData):
     kind: str
     monetization_model: str
     policy: str
+    
+@dataclass
+class CommentTrack(BaseData):
+    artwork_url: Optional[str]
+    caption: Optional[str]
+    id: int
+    kind: str
+    last_modified: datetime.datetime
+    permalink: str
+    permalink_url: str
+    public: bool
+    secret_token: Optional[str]
+    sharing: str
+    title: str
+    uri: str
+    urn: str
+    user_id: int
+    full_duration: int
+    duration: int
+    display_date: datetime.datetime
+    media: Media
+    station_urn: str
+    station_permalink: str
+    track_authorization: str
+    monetization_model: str
+    policy: str
+    user: BasicUser

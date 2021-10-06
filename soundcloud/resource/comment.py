@@ -2,7 +2,7 @@ import datetime
 from dataclasses import dataclass
 
 from soundcloud.resource.base import BaseData
-from soundcloud.resource.track import BasicTrack
+from soundcloud.resource.track import CommentTrack
 from soundcloud.resource.user import BasicUser
 
 @dataclass
@@ -23,4 +23,4 @@ class BasicComment(BaseData):
     
 @dataclass
 class Comment(BasicComment):
-    track: BasicTrack
+    track: CommentTrack

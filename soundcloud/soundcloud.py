@@ -13,7 +13,7 @@ from .resource.playlist import BasicAlbumPlaylist, AlbumPlaylist
 from .resource.stream import TrackStreamItem, PlaylistStreamItem, TrackStreamRepostItem, PlaylistStreamRepostItem
 from .resource.track import BasicTrack, Track
 from .resource.user import BasicUser, User
-from .resource.web_profile import WebProfile
+from .resource.web_profile import WebProfile, WebProfileUsername
 
 T = TypeVar("T")
 
@@ -71,7 +71,7 @@ class SoundCloud:
         "user_toptracks":             Request("/users/{user_id}/toptracks", BasicTrack),
         "user_albums":                Request("/users/{user_id}/albums", BasicAlbumPlaylist), # (can be representation=mini)
         "user_playlists":             Request("/users/{user_id}/playlists_without_albums", BasicAlbumPlaylist), # (can be representation=mini)
-        "user_web_profiles":          Request("/users/{user_urn}/web-profiles", WebProfile),
+        "user_web_profiles":          Request("/users/{user_urn}/web-profiles", Union[WebProfile, WebProfileUsername]),
     }
     
     def __init__(self, client_id: str, auth_token: str = None) -> None:
@@ -114,7 +114,7 @@ class SoundCloud:
                 return resource_type.from_dict(r.json())
             raise ValueError(f"Could not convert {r.json()} to type {resource_type}")
     
-    def collection(self, url: str, resource_type: T, offset: str = None, limit: str = None, use_auth: bool = True, **kwargs) -> Generator[T, None, None]:
+    def collection(self, url: str, resource_type: T, offset: str = None, limit: int = None, use_auth: bool = True, **kwargs) -> Generator[T, None, None]:
         """
         Yields resources from the given url with
         parameters given by kwargs. Converts the resources
@@ -134,16 +134,14 @@ class SoundCloud:
                 data = r.json()
                 for resource in data["collection"]:
                     if union:
-                        converted = False
                         for t in get_args(resource_type):
                             try:
                                 yield t.from_dict(resource)
-                                converted = True
                                 break
+                            except GeneratorExit:
+                                return
                             except:
                                 pass
-                        if not converted:
-                            raise ValueError(f"Could not convert resource to type {resource_type}")
                     else:
                         yield resource_type.from_dict(resource)
                 url = data.get("next_href", None)
@@ -151,6 +149,30 @@ class SoundCloud:
                 params = parse_qs(parsed.query)
                 params["client_id"] = self.client_id # next_href doesn't contain client_id
                 url = urljoin(url, parsed.path)
+    
+    def resources(self, resource_url: str, resource_type: T, use_auth: bool = True, **kwargs) -> list[T]:
+        union = get_origin(resource_type) is Union
+        params = kwargs
+        params["client_id"] = self.client_id
+        headers = {}
+        if use_auth and self.authorization is not None:
+            headers["Authorization"] = self.authorization
+        ret = []
+        with requests.get(resource_url, params=params, headers=headers) as r:
+            if r.status_code in (400, 404, 500):
+                return ret
+            r.raise_for_status()
+            for resource in r.json():
+                if union:
+                    for t in get_args(resource_type):
+                        try:
+                            ret.append(t.from_dict(resource))
+                            break
+                        except:
+                            pass
+                else:
+                    ret.append(resource_type.from_dict(resource))
+        return ret
     
     def is_client_id_valid(self) -> bool:
         """
@@ -487,10 +509,10 @@ class SoundCloud:
             *self.requests["user_playlists"].new(user_id=user_id), **kwargs
         )
     
-    def get_user_links(self, user_urn: str, **kwargs) -> Generator[WebProfile, None, None]:
+    def get_user_links(self, user_urn: str, **kwargs) -> list[Union[WebProfile, WebProfileUsername]]:
         """
         Get links in this user's description
         """
-        return self.collection(
+        return self.resources(
             *self.requests["user_web_profiles"].new(user_urn=user_urn), **kwargs
         )
