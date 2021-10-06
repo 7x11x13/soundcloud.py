@@ -1,5 +1,7 @@
 # soundcloud.py
 
+[![Tests](https://github.com/7x11x13/soundcloud.py/actions/workflows/ci.yml/badge.svg)](https://github.com/7x11x13/soundcloud.py/actions/workflows/ci.yml)[![Coverage Status](https://coveralls.io/repos/github/7x11x13/soundcloud.py/badge.svg?branch=main)](https://coveralls.io/github/7x11x13/soundcloud.py?branch=main)
+
 Python wrapper for some of the v2 SoundCloud API
 
 ## Installation
