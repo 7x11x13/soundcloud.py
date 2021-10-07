@@ -43,7 +43,7 @@ class Request(Generic[T]):
         """
         Requests the resource at the given url with
         parameters given by kwargs. Converts the resource
-        to type resource_type and returns it. If the
+        to type T and returns it. If the
         resource does not exist, returns None
         """
         resource_url = self.format_url_and_remove_params(kwargs)
@@ -65,7 +65,7 @@ class CollectionRequest(Request, Generic[T]):
         """
         Yields resources from the given url with
         parameters given by kwargs. Converts the resources
-        to type resource_type before yielding
+        to type T before yielding
         """
         resource_url = self.format_url_and_remove_params(kwargs)
         params = kwargs
@@ -93,8 +93,12 @@ class CollectionRequest(Request, Generic[T]):
                 
 @dataclass
 class ListRequest(Request, Generic[T]):
-    
-    def __call__(self, use_auth=True, **kwargs) -> Generator[T, None, None]:
+    """
+    Requests the resource list at the given url with
+    parameters given by kwargs. Converts the resources
+    to type T and returns them.
+    """
+    def __call__(self, use_auth=True, **kwargs) -> list[T]:
         resource_url = self.format_url_and_remove_params(kwargs)
         params = kwargs
         params["client_id"] = self.client.client_id
