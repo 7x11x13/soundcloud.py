@@ -10,6 +10,7 @@ def test_playlist_likers(client: SoundCloud):
     for liker in likers:
         if liker.username == "7x11x13":
             found = True
+            break
     assert found
 
 def test_playlist_reposters(client: SoundCloud):
@@ -18,4 +19,5 @@ def test_playlist_reposters(client: SoundCloud):
     for reposter in reposters:
         if reposter.username == "7x11x13":
             found = True
+            break
     assert found

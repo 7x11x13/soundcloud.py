@@ -41,3 +41,12 @@ def test_track_likers(client: SoundCloud):
             found = True
             break
     assert found
+
+def test_track_tags(client: SoundCloud):
+    track = client.get_track(1032303631)
+    tags = track.get_all_tags()
+    assert "Wan Bushi" in tags and "Electronic" in tags
+
+def test_track_original_download(client: SoundCloud):
+    download = client.get_track_original_download(1032303631)
+    assert download.startswith("http")

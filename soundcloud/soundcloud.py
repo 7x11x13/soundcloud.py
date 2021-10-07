@@ -7,6 +7,7 @@ from requests import HTTPError
 
 from .resource.comment import BasicComment, Comment
 from .resource.conversation import Conversation
+from .resource.download import OriginalDownload
 from .resource.like import TrackLike, PlaylistLike
 from .resource.message import Message
 from .resource.playlist import BasicAlbumPlaylist, AlbumPlaylist
@@ -18,60 +19,59 @@ from .resource.web_profile import WebProfile, WebProfileUsername
 T = TypeVar("T")
 
 @dataclass
-class Request:
+class RequestFactory:
     
     base = "https://api-v2.soundcloud.com"
     
-    format_url: str
-    return_type: type
+    def __init__(self, format_url: str, return_type: T):
+        self.format_url = format_url
+        self.return_type = return_type
     
-    def new(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs) -> tuple[str, T]:
         return (
             self.base + self.format_url.format(*args, **kwargs),
             self.return_type
         )
-        
-    def __iter__(self):
-        return iter((self.format_url, self.return_type))
 
 class SoundCloud:
     
-    requests: dict[str, Request] = {
-        "me":                         Request("/me", User),
-        "me_stream":                  Request("/stream", Union[TrackStreamItem, PlaylistStreamItem, TrackStreamRepostItem, PlaylistStreamRepostItem]),
-        "resolve":                    Request("/resolve", Union[User, Track, AlbumPlaylist]),
-        "search":                     Request("/search", Union[User, Track, AlbumPlaylist]),
-        "search_albums":              Request("/search/albums", AlbumPlaylist), # ?filter.genre_or_tag
-        "search_playlists":           Request("/search/playlists_without_albums", AlbumPlaylist),
-        "search_tracks":              Request("/search/tracks", Track), #?filter.created_at&filter.duration&filter.license
-        "search_users":               Request("/search/users", User), #?filter.place
-        "tag_recent_tracks":          Request("/recent-tracks/{tag}", Track),
-        "playlist":                   Request("/playlists/{playlist_id}", BasicAlbumPlaylist),
-        "playlist_likers":            Request("/playlists/{playlist_id}/likers", User),
-        "playlist_reposters":         Request("/playlists/{playlist_id}/reposters", User),
-        "track":                      Request("/tracks/{track_id}", BasicTrack),
-        "track_albums":               Request("/tracks/{track_id}/albums", BasicAlbumPlaylist), # (can be representation=mini)
-        "track_playlists":            Request("/tracks/{track_id}/playlists_without_albums", BasicAlbumPlaylist), # (can be representation=mini)
-        "track_comments":             Request("/tracks/{track_id}/comments", BasicComment),
-        "track_likers":               Request("/tracks/{track_id}/likers", User),
-        "track_reposters":            Request("/tracks/{track_id}/reposters", User),
-        "user":                       Request("/users/{user_id}", User),
-        "user_comments":              Request("/users/{user_id}/comments", Comment),
-        "user_conversation_messages": Request("/users/{user_id}/conversations/{conversation_id}/messages", Message),
-        "user_conversations":         Request("/users/{user_id}/conversations", Conversation),
-        "user_conversations_unread":  Request("/users/{user_id}/conversations/unread", Conversation),
-        "user_featured_profiles":     Request("/users/{user_id}/featured-profiles", User),
-        "user_followers":             Request("/users/{user_id}/followers", User),
-        "user_followings":            Request("/users/{user_id}/followings", User),
-        "user_likes":                 Request("/users/{user_id}/likes", Union[TrackLike, PlaylistLike]),
-        "user_related_artists":       Request("/users/{user_id}/relatedartists", User),
-        "user_reposts":               Request("/stream/users/{user_id}/reposts", Union[TrackStreamRepostItem, PlaylistStreamRepostItem]),
-        "user_stream":                Request("/stream/users/{user_id}", Union[TrackStreamItem, PlaylistStreamItem, TrackStreamRepostItem, PlaylistStreamRepostItem]),
-        "user_tracks":                Request("/users/{user_id}/tracks", BasicTrack),
-        "user_toptracks":             Request("/users/{user_id}/toptracks", BasicTrack),
-        "user_albums":                Request("/users/{user_id}/albums", BasicAlbumPlaylist), # (can be representation=mini)
-        "user_playlists":             Request("/users/{user_id}/playlists_without_albums", BasicAlbumPlaylist), # (can be representation=mini)
-        "user_web_profiles":          Request("/users/{user_urn}/web-profiles", Union[WebProfile, WebProfileUsername]),
+    requests: dict[str, RequestFactory] = {
+        "me":                         RequestFactory("/me", User),
+        "me_stream":                  RequestFactory("/stream", Union[TrackStreamItem, PlaylistStreamItem, TrackStreamRepostItem, PlaylistStreamRepostItem]),
+        "resolve":                    RequestFactory("/resolve", Union[User, Track, AlbumPlaylist]),
+        "search":                     RequestFactory("/search", Union[User, Track, AlbumPlaylist]),
+        "search_albums":              RequestFactory("/search/albums", AlbumPlaylist), # ?filter.genre_or_tag
+        "search_playlists":           RequestFactory("/search/playlists_without_albums", AlbumPlaylist),
+        "search_tracks":              RequestFactory("/search/tracks", Track), #?filter.created_at&filter.duration&filter.license
+        "search_users":               RequestFactory("/search/users", User), #?filter.place
+        "tag_recent_tracks":          RequestFactory("/recent-tracks/{tag}", Track),
+        "playlist":                   RequestFactory("/playlists/{playlist_id}", BasicAlbumPlaylist),
+        "playlist_likers":            RequestFactory("/playlists/{playlist_id}/likers", User),
+        "playlist_reposters":         RequestFactory("/playlists/{playlist_id}/reposters", User),
+        "track":                      RequestFactory("/tracks/{track_id}", BasicTrack),
+        "track_albums":               RequestFactory("/tracks/{track_id}/albums", BasicAlbumPlaylist), # (can be representation=mini)
+        "track_playlists":            RequestFactory("/tracks/{track_id}/playlists_without_albums", BasicAlbumPlaylist), # (can be representation=mini)
+        "track_comments":             RequestFactory("/tracks/{track_id}/comments", BasicComment),
+        "track_likers":               RequestFactory("/tracks/{track_id}/likers", User),
+        "track_reposters":            RequestFactory("/tracks/{track_id}/reposters", User),
+        "track_original_download":    RequestFactory("/tracks/{track_id}/download", OriginalDownload),
+        "user":                       RequestFactory("/users/{user_id}", User),
+        "user_comments":              RequestFactory("/users/{user_id}/comments", Comment),
+        "user_conversation_messages": RequestFactory("/users/{user_id}/conversations/{conversation_id}/messages", Message),
+        "user_conversations":         RequestFactory("/users/{user_id}/conversations", Conversation),
+        "user_conversations_unread":  RequestFactory("/users/{user_id}/conversations/unread", Conversation),
+        "user_featured_profiles":     RequestFactory("/users/{user_id}/featured-profiles", User),
+        "user_followers":             RequestFactory("/users/{user_id}/followers", User),
+        "user_followings":            RequestFactory("/users/{user_id}/followings", User),
+        "user_likes":                 RequestFactory("/users/{user_id}/likes", Union[TrackLike, PlaylistLike]),
+        "user_related_artists":       RequestFactory("/users/{user_id}/relatedartists", User),
+        "user_reposts":               RequestFactory("/stream/users/{user_id}/reposts", Union[TrackStreamRepostItem, PlaylistStreamRepostItem]),
+        "user_stream":                RequestFactory("/stream/users/{user_id}", Union[TrackStreamItem, PlaylistStreamItem, TrackStreamRepostItem, PlaylistStreamRepostItem]),
+        "user_tracks":                RequestFactory("/users/{user_id}/tracks", BasicTrack),
+        "user_toptracks":             RequestFactory("/users/{user_id}/toptracks", BasicTrack),
+        "user_albums":                RequestFactory("/users/{user_id}/albums", BasicAlbumPlaylist), # (can be representation=mini)
+        "user_playlists":             RequestFactory("/users/{user_id}/playlists_without_albums", BasicAlbumPlaylist), # (can be representation=mini)
+        "user_web_profiles":          RequestFactory("/users/{user_urn}/web-profiles", Union[WebProfile, WebProfileUsername])
     }
     
     def __init__(self, client_id: str, auth_token: str = None) -> None:
@@ -180,7 +180,7 @@ class SoundCloud:
         """
         try:
             next(self.collection(
-                *self.requests["tag_recent_tracks"].new(tag="electronic"), limit="1", use_auth=False)
+                *self.requests["tag_recent_tracks"](tag="electronic"), limit="1", use_auth=False)
             )
             return True
         except HTTPError as err:
@@ -194,7 +194,7 @@ class SoundCloud:
         Checks if current auth_token is valid
         """
         try:
-            self.resource(*self.requests["me"].new(auth_token=self.auth_token))
+            self.resource(*self.requests["me"](auth_token=self.auth_token))
             return True
         except HTTPError as err:
             if err.response.status_code == 401:
@@ -207,7 +207,7 @@ class SoundCloud:
         Gets the user associated with client's auth token
         """
         return self.resource(
-            *self.requests["me"].new()
+            *self.requests["me"]()
         )
     
     def get_my_stream(self, **kwargs) -> Generator[Union[TrackStreamItem, PlaylistStreamItem, TrackStreamRepostItem, PlaylistStreamRepostItem], None, None]:
@@ -216,7 +216,7 @@ class SoundCloud:
         for the client's auth token
         """
         return self.collection(
-            *self.requests["me_stream"].new(), **kwargs
+            *self.requests["me_stream"](), **kwargs
         )
         
     def resolve(self, url: str) -> Union[AlbumPlaylist, User, Track, None]:
@@ -225,7 +225,7 @@ class SoundCloud:
         exists, otherwise return None
         """
         return self.resource(
-            *self.requests["resolve"].new(), url=url
+            *self.requests["resolve"](), url=url
         )
     
     def search(self, query: str, **kwargs) -> Generator[Union[User, Track, AlbumPlaylist], None, None]:
@@ -233,7 +233,7 @@ class SoundCloud:
         Search for users, tracks, and playlists
         """
         return self.collection(
-            *self.requests["search"].new(), q=query, **kwargs
+            *self.requests["search"](), q=query, **kwargs
         )
         
     def search_albums(self, query: str, **kwargs) -> Generator[AlbumPlaylist, None, None]:
@@ -241,7 +241,7 @@ class SoundCloud:
         Search for albums (not playlists)
         """
         return self.collection(
-            *self.requests["search_albums"].new(), q=query, **kwargs
+            *self.requests["search_albums"](), q=query, **kwargs
         )
         
     def search_playlists(self, query: str, **kwargs) -> Generator[AlbumPlaylist, None, None]:
@@ -249,7 +249,7 @@ class SoundCloud:
         Search for playlists
         """
         return self.collection(
-            *self.requests["search_playlists"].new(), q=query, **kwargs
+            *self.requests["search_playlists"](), q=query, **kwargs
         )
         
     def search_tracks(self, query: str, **kwargs) -> Generator[Track, None, None]:
@@ -257,7 +257,7 @@ class SoundCloud:
         Search for tracks
         """
         return self.collection(
-            *self.requests["search_tracks"].new(), q=query, **kwargs
+            *self.requests["search_tracks"](), q=query, **kwargs
         )
         
     def search_users(self, query: str, **kwargs) -> Generator[User, None, None]:
@@ -265,7 +265,7 @@ class SoundCloud:
         Search for users
         """
         return self.collection(
-            *self.requests["search_users"].new(), q=query, **kwargs
+            *self.requests["search_users"](), q=query, **kwargs
         )
         
     def get_tag_tracks_recent(self, tag: str, **kwargs) -> Generator[Track, None, None]:
@@ -273,7 +273,7 @@ class SoundCloud:
         Get most recent tracks for this tag
         """
         return self.collection(
-            *self.requests["tag_recent_tracks"].new(tag=tag), **kwargs
+            *self.requests["tag_recent_tracks"](tag=tag), **kwargs
         )
         
     def get_playlist(self, playlist_id: int) -> Optional[BasicAlbumPlaylist]:
@@ -282,7 +282,7 @@ class SoundCloud:
         If the ID is invalid, return None
         """
         return self.resource(
-            *self.requests["playlist"].new(playlist_id=playlist_id)
+            *self.requests["playlist"](playlist_id=playlist_id)
         )
         
     def get_playlist_likers(self, playlist_id: int, **kwargs) -> Generator[User, None, None]:
@@ -290,7 +290,7 @@ class SoundCloud:
         Get people who liked this playlist
         """
         return self.collection(
-            *self.requests["playlist_likers"].new(playlist_id=playlist_id),
+            *self.requests["playlist_likers"](playlist_id=playlist_id),
             **kwargs
         )
         
@@ -299,7 +299,7 @@ class SoundCloud:
         Get people who reposted this playlist
         """
         return self.collection(
-            *self.requests["playlist_reposters"].new(playlist_id=playlist_id),
+            *self.requests["playlist_reposters"](playlist_id=playlist_id),
             **kwargs
         )
     
@@ -309,7 +309,7 @@ class SoundCloud:
         If the ID is invalid, return None
         """
         return self.resource(
-            *self.requests["track"].new(track_id=track_id)
+            *self.requests["track"](track_id=track_id)
         )
     
     def get_track_albums(self, track_id: int, **kwargs) -> Generator[AlbumPlaylist, None, None]:
@@ -317,7 +317,7 @@ class SoundCloud:
         Get albums that this track is in
         """
         return self.collection(
-            *self.requests["track_albums"].new(track_id=track_id),
+            *self.requests["track_albums"](track_id=track_id),
             **kwargs
         )
         
@@ -326,7 +326,7 @@ class SoundCloud:
         Get playlists that this track is in
         """
         return self.collection(
-            *self.requests["track_playlists"].new(track_id=track_id),
+            *self.requests["track_playlists"](track_id=track_id),
             **kwargs
         )
         
@@ -335,7 +335,7 @@ class SoundCloud:
         Get comments on this track
         """
         return self.collection(
-            *self.requests["track_comments"].new(track_id=track_id),
+            *self.requests["track_comments"](track_id=track_id),
             threaded=threaded,
             filter_replies=filter_replies,
             **kwargs
@@ -346,7 +346,7 @@ class SoundCloud:
         Get users who liked this track
         """
         return self.collection(
-            *self.requests["track_likers"].new(track_id=track_id),
+            *self.requests["track_likers"](track_id=track_id),
             **kwargs
         )
         
@@ -355,8 +355,20 @@ class SoundCloud:
         Get users who reposted this track
         """
         return self.collection(
-            *self.requests["track_reposters"].new(track_id=track_id), **kwargs
+            *self.requests["track_reposters"](track_id=track_id), **kwargs
         )
+        
+    def get_track_original_download(self, track_id: int) -> Optional[str]:
+        """
+        Get track download
+        """
+        download = self.resource(
+            *self.requests["track_original_download"](track_id=track_id)
+        )
+        if download is None:
+            return None
+        else:
+            return download.redirectUri
             
     def get_user(self, user_id: int) -> Optional[User]:
         """
@@ -364,7 +376,7 @@ class SoundCloud:
         If the ID is invalid, return None
         """
         return self.resource(
-            *self.requests["user"].new(user_id=user_id)
+            *self.requests["user"](user_id=user_id)
         )
     
     def get_user_by_username(self, username: str) -> Optional[User]:
@@ -383,7 +395,7 @@ class SoundCloud:
         Get comments by this user
         """
         return self.collection(
-            *self.requests["user_comments"].new(user_id=user_id), **kwargs
+            *self.requests["user_comments"](user_id=user_id), **kwargs
         )
     
     def get_conversation_messages(self, user_id: int, conversation_id: int, **kwargs) -> Generator[Message, None, None]:
@@ -391,7 +403,7 @@ class SoundCloud:
         Get messages in this conversation
         """
         return self.collection(
-            *self.requests["user_conversation_messages"].new(user_id=user_id,
+            *self.requests["user_conversation_messages"](user_id=user_id,
                                                              conversation_id=conversation_id),
             **kwargs
         )
@@ -401,7 +413,7 @@ class SoundCloud:
         Get conversations including this user
         """
         return self.collection(
-            *self.requests["user_conversations"].new(user_id=user_id),
+            *self.requests["user_conversations"](user_id=user_id),
             **kwargs
         )
     
@@ -410,7 +422,7 @@ class SoundCloud:
         Get conversations unread by this user
         """
         return self.collection(
-            *self.requests["user_conversations_unread"].new(user_id=user_id),
+            *self.requests["user_conversations_unread"](user_id=user_id),
             **kwargs
         )
         
@@ -419,7 +431,7 @@ class SoundCloud:
         Get profiles featured by this user
         """
         return self.collection(
-            *self.requests["user_featured_profiles"].new(user_id=user_id),
+            *self.requests["user_featured_profiles"](user_id=user_id),
             **kwargs
         )
 
@@ -428,7 +440,7 @@ class SoundCloud:
         Get user's followers
         """
         return self.collection(
-            *self.requests["user_followers"].new(user_id=user_id),
+            *self.requests["user_followers"](user_id=user_id),
             **kwargs
         )
 
@@ -437,7 +449,7 @@ class SoundCloud:
         Get users this user is following
         """
         return self.collection(
-            *self.requests["user_followings"].new(user_id=user_id),
+            *self.requests["user_followings"](user_id=user_id),
             **kwargs
         )
         
@@ -446,7 +458,7 @@ class SoundCloud:
         Get likes by this user
         """
         return self.collection(
-            *self.requests["user_likes"].new(user_id=user_id),
+            *self.requests["user_likes"](user_id=user_id),
             **kwargs
         )
         
@@ -455,7 +467,7 @@ class SoundCloud:
         Get artists related to this user
         """
         return self.collection(
-            *self.requests["user_related_artists"].new(user_id=user_id),
+            *self.requests["user_related_artists"](user_id=user_id),
             **kwargs
         )
         
@@ -464,7 +476,7 @@ class SoundCloud:
         Get reposts by this user
         """
         return self.collection(
-            *self.requests["user_reposts"].new(user_id=user_id),
+            *self.requests["user_reposts"](user_id=user_id),
             **kwargs
         )
         
@@ -474,7 +486,7 @@ class SoundCloud:
         reposts by this user
         """
         return self.collection(
-            *self.requests["user_stream"].new(user_id=user_id), **kwargs
+            *self.requests["user_stream"](user_id=user_id), **kwargs
         )
     
     def get_user_tracks(self, user_id: int, **kwargs) -> Generator[BasicTrack, None, None]:
@@ -482,7 +494,7 @@ class SoundCloud:
         Get tracks uploaded by this user
         """
         return self.collection(
-            *self.requests["user_tracks"].new(user_id=user_id), **kwargs
+            *self.requests["user_tracks"](user_id=user_id), **kwargs
         )
     
     def get_user_popular_tracks(self, user_id: int, **kwargs) -> Generator[BasicTrack, None, None]:
@@ -490,7 +502,7 @@ class SoundCloud:
         Get popular tracks uploaded by this user
         """
         return self.collection(
-            *self.requests["user_toptracks"].new(user_id=user_id), **kwargs
+            *self.requests["user_toptracks"](user_id=user_id), **kwargs
         )
         
     def get_user_albums(self, user_id: int, **kwargs) -> Generator[BasicAlbumPlaylist, None, None]:
@@ -498,7 +510,7 @@ class SoundCloud:
         Get albums uploaded by this user
         """
         return self.collection(
-            *self.requests["user_albums"].new(user_id=user_id), **kwargs
+            *self.requests["user_albums"](user_id=user_id), **kwargs
         )
         
     def get_user_playlists(self, user_id: int, **kwargs) -> Generator[BasicAlbumPlaylist, None, None]:
@@ -506,7 +518,7 @@ class SoundCloud:
         Get playlists uploaded by this user
         """
         return self.collection(
-            *self.requests["user_playlists"].new(user_id=user_id), **kwargs
+            *self.requests["user_playlists"](user_id=user_id), **kwargs
         )
     
     def get_user_links(self, user_urn: str, **kwargs) -> list[Union[WebProfile, WebProfileUsername]]:
@@ -514,5 +526,5 @@ class SoundCloud:
         Get links in this user's description
         """
         return self.resources(
-            *self.requests["user_web_profiles"].new(user_urn=user_urn), **kwargs
+            *self.requests["user_web_profiles"](user_urn=user_urn), **kwargs
         )

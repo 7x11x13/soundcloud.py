@@ -33,3 +33,9 @@ class BaseItem(BaseData):
     uri: str
     user_id: int
     display_date: str
+    
+    def get_all_tags(self) -> list[str]:
+        tags = []
+        if self.genre:
+            tags.append(self.genre)
+        return tags + [tag.strip() for tag in self.tag_list.split('"') if tag.strip()]
