@@ -1,5 +1,8 @@
 from soundcloud.resource.playlist import AlbumPlaylist, BasicAlbumPlaylist
-from soundcloud.resource.stream import TrackStreamItem, TrackStreamRepostItem, PlaylistStreamItem, PlaylistStreamRepostItem
-from soundcloud.resource.track import Track, BasicTrack
-from soundcloud.resource.user import User, BasicUser
-from soundcloud.soundcloud import SoundCloud
+from soundcloud.resource.stream import (PlaylistStreamItem,
+                                        PlaylistStreamRepostItem,
+                                        TrackStreamItem, TrackStreamRepostItem)
+from soundcloud.resource.track import BasicTrack, Track
+from soundcloud.resource.user import BasicUser, User
+from soundcloud.soundcloud import (RepostItem, SearchItem, SoundCloud,
+                                   StreamItem)
