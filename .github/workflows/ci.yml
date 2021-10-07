@@ -1,8 +1,7 @@
 name: tests
 on:
   push:
-    tags:
-      - '*'
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 jobs:
@@ -24,6 +23,7 @@ jobs:
         client_id: ${{ secrets.CLIENT_ID }}
         auth_token: ${{ secrets.AUTH_TOKEN }}
       run: |
+        git checkout main
         coverage run --source=soundcloud -m pytest
         coveralls --service=github
     - name: Build package
