@@ -37,10 +37,10 @@ class BaseTrack(BaseItem):
     commentable: bool
     comment_count: Optional[int]
     downloadable: bool
-    download_count: int
+    download_count: Optional[int]
     full_duration: int
     has_downloads_left: bool
-    playback_count: int
+    playback_count: Optional[int]
     purchase_title: Optional[str]
     purchase_url: Optional[str]
     state: str
