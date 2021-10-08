@@ -5,22 +5,18 @@ from typing import Generator, Optional, TypeVar, Union
 from requests import HTTPError
 
 from .request import CollectionRequest, ListRequest, Request
+from .resource.aliases import Like, RepostItem, SearchItem, StreamItem
 from .resource.comment import BasicComment, Comment
 from .resource.conversation import Conversation
 from .resource.download import OriginalDownload
 from .resource.like import PlaylistLike, TrackLike
 from .resource.message import Message
 from .resource.playlist import AlbumPlaylist, BasicAlbumPlaylist
-from .resource.stream import (PlaylistStreamItem, PlaylistStreamRepostItem,
-                              TrackStreamItem, TrackStreamRepostItem)
 from .resource.track import BasicTrack, Track
-from .resource.user import BasicUser, User
-from .resource.web_profile import WebProfile, WebProfileUsername
+from .resource.user import User
+from .resource.web_profile import WebProfile
 
 T = TypeVar("T")
-StreamItem = Union[TrackStreamItem, PlaylistStreamItem, TrackStreamRepostItem, PlaylistStreamRepostItem]
-RepostItem = Union[TrackStreamRepostItem, PlaylistStreamRepostItem]
-SearchItem = Union[User, Track, AlbumPlaylist]
         
 class SoundCloud:
     
@@ -58,7 +54,7 @@ class SoundCloud:
             "user_featured_profiles":     CollectionRequest[User](self, "/users/{user_id}/featured-profiles", User),
             "user_followers":             CollectionRequest[User](self, "/users/{user_id}/followers", User),
             "user_followings":            CollectionRequest[User](self, "/users/{user_id}/followings", User),
-            "user_likes":                 CollectionRequest[Union[TrackLike, PlaylistLike]](self, "/users/{user_id}/likes", Union[TrackLike, PlaylistLike]),
+            "user_likes":                 CollectionRequest[Like](self, "/users/{user_id}/likes", Like),
             "user_related_artists":       CollectionRequest[User](self, "/users/{user_id}/relatedartists", User),
             "user_reposts":               CollectionRequest[RepostItem](self, "/stream/users/{user_id}/reposts", RepostItem),
             "user_stream":                CollectionRequest[StreamItem](self, "/stream/users/{user_id}", StreamItem),
@@ -66,7 +62,7 @@ class SoundCloud:
             "user_toptracks":             CollectionRequest[BasicTrack](self, "/users/{user_id}/toptracks", BasicTrack),
             "user_albums":                CollectionRequest[BasicAlbumPlaylist](self, "/users/{user_id}/albums", BasicAlbumPlaylist), # (can be representation=mini)
             "user_playlists":             CollectionRequest[BasicAlbumPlaylist](self, "/users/{user_id}/playlists_without_albums", BasicAlbumPlaylist), # (can be representation=mini)
-            "user_web_profiles":          ListRequest[Union[WebProfile, WebProfileUsername]](self, "/users/{user_urn}/web-profiles", Union[WebProfile, WebProfileUsername])
+            "user_web_profiles":          ListRequest[WebProfile](self, "/users/{user_urn}/web-profiles", WebProfile)
         }
     
     def set_auth_token(self, auth_token: str) -> None:
@@ -291,7 +287,7 @@ class SoundCloud:
         """
         return self.requests["user_followings"](user_id=user_id, **kwargs)
         
-    def get_user_likes(self, user_id: int, **kwargs) -> Generator[Union[TrackLike, PlaylistLike], None, None]:
+    def get_user_likes(self, user_id: int, **kwargs) -> Generator[Like, None, None]:
         """
         Get likes by this user
         """
@@ -340,7 +336,7 @@ class SoundCloud:
         """
         return self.requests["user_playlists"](user_id=user_id, **kwargs)
     
-    def get_user_links(self, user_urn: str, **kwargs) -> list[Union[WebProfile, WebProfileUsername]]:
+    def get_user_links(self, user_urn: str, **kwargs) -> list[WebProfile]:
         """
         Get links in this user's description
         """
