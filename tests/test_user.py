@@ -1,3 +1,5 @@
+import itertools
+
 from soundcloud import SoundCloud, User
 
 def test_valid_user_id(client: SoundCloud):
@@ -46,6 +48,10 @@ def test_user_followings(client: SoundCloud):
 def test_user_likes(client: SoundCloud):
     like = next(client.get_user_likes(992430331))
     assert like.track.title == "Wan Bushi - Eurodance Vibes (part 1+2+3)"
+
+def test_user_likes_2(client: SoundCloud):
+    for like in itertools.islice(client.get_user_likes(790976431), 10):
+        assert like is not None
     
 def test_user_reposts(client: SoundCloud):
     repost = next(client.get_user_reposts(992430331))

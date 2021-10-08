@@ -5,7 +5,7 @@ from typing import Optional
 from dacite import from_dict
 
 from soundcloud.resource.base import BaseData
-from soundcloud.resource.playlist import BasicAlbumPlaylist
+from soundcloud.resource.playlist import AlbumPlaylistNoTracks
 from soundcloud.resource.track import BasicTrack
 
 @dataclass
@@ -19,4 +19,4 @@ class TrackLike(BaseLike):
 
 @dataclass
 class PlaylistLike(BaseLike):
-    playlist: BasicAlbumPlaylist
+    playlist: AlbumPlaylistNoTracks

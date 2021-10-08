@@ -25,3 +25,30 @@ class AlbumPlaylist(BaseAlbumPlaylist):
 @dataclass
 class BasicAlbumPlaylist(BaseAlbumPlaylist):
     user: BasicUser
+
+@dataclass
+class AlbumPlaylistNoTracks(BaseData):
+    artwork_url: Optional[str]
+    created_at: datetime.datetime
+    duration: int
+    id: int
+    kind: str
+    last_modified: datetime.datetime
+    likes_count: Optional[int]
+    managed_by_feeds: bool
+    permalink: str
+    permalink_url: str
+    public: bool
+    reposts_count: Optional[int]
+    secret_token: Optional[str]
+    sharing: str
+    title: str
+    track_count: int
+    uri: str
+    user_id: int
+    set_type: str
+    is_album: bool
+    published_at: datetime.datetime
+    release_date: Optional[str]
+    display_date: datetime.datetime
+    user: BasicUser
