@@ -12,7 +12,7 @@ class BaseItem(BaseData):
     description: Optional[str]
     duration: int
     embeddable_by: str
-    genre: str
+    genre: Optional[str]
     id: int
     kind: str
     label_name: Optional[str]
