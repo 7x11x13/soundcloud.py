@@ -16,6 +16,8 @@ pip install soundcloud-v2
 from soundcloud import SoundCloud
 
 sc = SoundCloud("client_id", "auth_token")
+assert sc.is_client_id_valid()
+assert sc.is_auth_token_valid()
 me = sc.get_user_by_username("7x11x13")
 assert me.permalink == "7x11x13"
 ```
