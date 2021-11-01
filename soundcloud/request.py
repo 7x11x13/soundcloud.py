@@ -49,7 +49,7 @@ class Request(Generic[T]):
         resource_url = self.format_url_and_remove_params(kwargs)
         params = kwargs
         params["client_id"] = self.client.client_id
-        headers = {}
+        headers = self.client.get_default_headers()
         if use_auth and self.client.authorization is not None:
             headers["Authorization"] = self.client.authorization
         with requests.get(resource_url, params=params, headers=headers) as r:
@@ -74,7 +74,7 @@ class CollectionRequest(Request, Generic[T]):
             params["offset"] = offset
         if limit:
             params["limit"] = limit
-        headers = {}
+        headers = self.client.get_default_headers()
         if use_auth and self.client.authorization is not None:
             headers["Authorization"] = self.client.authorization
         while resource_url:
@@ -102,7 +102,7 @@ class ListRequest(Request, Generic[T]):
         resource_url = self.format_url_and_remove_params(kwargs)
         params = kwargs
         params["client_id"] = self.client.client_id
-        headers = {}
+        headers = self.client.get_default_headers()
         if use_auth and self.client.authorization is not None:
             headers["Authorization"] = self.client.authorization
         resources = []

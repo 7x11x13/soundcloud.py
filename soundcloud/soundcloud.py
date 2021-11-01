@@ -20,10 +20,13 @@ T = TypeVar("T")
         
 class SoundCloud:
     
-    def __init__(self, client_id: str, auth_token: str = None) -> None:
+    DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0"
+    
+    def __init__(self, client_id: str, auth_token: str = None, user_agent: str = DEFAULT_USER_AGENT) -> None:
         self.client_id = client_id
         self.auth_token = None
         self.authorization = None
+        self.user_agent = user_agent
         self.set_auth_token(auth_token)
         
         self.requests: dict[str, Request] = {
@@ -71,6 +74,9 @@ class SoundCloud:
                 auth_token = auth_token.split()[-1]
             self.auth_token = auth_token
             self.authorization = f"OAuth {auth_token}" if auth_token else None
+    
+    def get_default_headers(self) -> dict[str, str]:
+        return {"User-Agent": self.user_agent}
     
     def is_client_id_valid(self) -> bool:
         """
