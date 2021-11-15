@@ -1,6 +1,6 @@
 import datetime
 from dataclasses import dataclass
-from typing import Optional
+from typing import List, Optional
 
 from soundcloud.resource.base import BaseData
 from soundcloud.resource.base_item import BaseItem
@@ -23,7 +23,7 @@ class Transcoding(BaseData):
     
 @dataclass
 class Media(BaseData):
-    transcodings: list[Transcoding]
+    transcodings: List[Transcoding]
     
 @dataclass
 class PublisherMetadata(BaseData):

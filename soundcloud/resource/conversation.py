@@ -1,5 +1,6 @@
 import datetime
 from dataclasses import dataclass
+from typing import List
 
 from soundcloud.resource.base import BaseData
 from soundcloud.resource.message import Message
@@ -12,4 +13,4 @@ class Conversation(BaseData):
     read: bool
     started_at: datetime.datetime
     summary: str
-    users: list[BasicUser]
+    users: List[BasicUser]

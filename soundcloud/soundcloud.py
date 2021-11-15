@@ -1,10 +1,22 @@
 import string
 from dataclasses import dataclass
-from typing import Generator, Optional, TypeVar, Union
+from typing import Dict, Generator, Generic, List, Optional, TypeVar, Union
 
+try:
+    from typing import get_args, get_origin
+except ImportError:
+    # get_args and get_origin shim for version < 3.8
+    def get_args(tp):
+        return getattr(tp, "__args__", ())
+    
+    def get_origin(tp):
+        return getattr(tp, "__origin__", None)
+    
+from urllib.parse import parse_qs, urljoin, urlparse
+
+import requests
 from requests import HTTPError
 
-from .request import CollectionRequest, ListRequest, Request
 from .resource.aliases import Like, RepostItem, SearchItem, StreamItem
 from .resource.comment import BasicComment, Comment
 from .resource.conversation import Conversation
@@ -29,7 +41,7 @@ class SoundCloud:
         self.user_agent = user_agent
         self.set_auth_token(auth_token)
         
-        self.requests: dict[str, Request] = {
+        self.requests: Dict[str, Request] = {
             "me":                         Request[User](self, "/me", User),
             "me_stream":                  CollectionRequest[StreamItem](self, "/stream", StreamItem),
             "resolve":                    Request[SearchItem](self, "/resolve", SearchItem),
@@ -75,7 +87,7 @@ class SoundCloud:
             self.auth_token = auth_token
             self.authorization = f"OAuth {auth_token}" if auth_token else None
     
-    def get_default_headers(self) -> dict[str, str]:
+    def get_default_headers(self) -> Dict[str, str]:
         return {"User-Agent": self.user_agent}
     
     def is_client_id_valid(self) -> bool:
@@ -342,8 +354,114 @@ class SoundCloud:
         """
         return self.requests["user_playlists"](user_id=user_id, **kwargs)
     
-    def get_user_links(self, user_urn: str, **kwargs) -> list[WebProfile]:
+    def get_user_links(self, user_urn: str, **kwargs) -> List[WebProfile]:
         """
         Get links in this user's description
         """
         return self.requests["user_web_profiles"](user_urn=user_urn, **kwargs)
+
+
+@dataclass
+class Request(Generic[T]):
+    
+    base = "https://api-v2.soundcloud.com"
+    client: SoundCloud
+    format_url: str
+    return_type: T
+    
+    def format_url_and_remove_params(self, kwargs):
+        format_args = {tup[1] for tup in string.Formatter().parse(self.format_url) if tup[1] is not None}
+        args = {}
+        for k in list(kwargs.keys()):
+            if k in format_args:
+                args[k] = kwargs.pop(k)     
+        return self.base + self.format_url.format(**args)
+    
+    def convert_dict(self, d):
+        union = get_origin(self.return_type) is Union
+        if union:
+            for t in get_args(self.return_type):
+                try:
+                    return t.from_dict(d)
+                except:
+                    pass
+        else:
+            return self.return_type.from_dict(d)
+        raise ValueError(f"Could not convert {d} to type {self.return_type}")
+    
+    def __call__(self, use_auth=True, **kwargs) -> Optional[T]:
+        """
+        Requests the resource at the given url with
+        parameters given by kwargs. Converts the resource
+        to type T and returns it. If the
+        resource does not exist, returns None
+        """
+        resource_url = self.format_url_and_remove_params(kwargs)
+        params = kwargs
+        params["client_id"] = self.client.client_id
+        headers = self.client.get_default_headers()
+        if use_auth and self.client.authorization is not None:
+            headers["Authorization"] = self.client.authorization
+        with requests.get(resource_url, params=params, headers=headers) as r:
+            if r.status_code in (400, 404, 500):
+                return None
+            r.raise_for_status()
+            return self.convert_dict(r.json())
+
+
+@dataclass
+class CollectionRequest(Request, Generic[T]):
+    
+    def __call__(self, use_auth=True, offset: str = None, limit: int = None, **kwargs) -> Generator[T, None, None]:
+        """
+        Yields resources from the given url with
+        parameters given by kwargs. Converts the resources
+        to type T before yielding
+        """
+        resource_url = self.format_url_and_remove_params(kwargs)
+        params = kwargs
+        params["client_id"] = self.client.client_id
+        if offset:
+            params["offset"] = offset
+        if limit:
+            params["limit"] = limit
+        headers = self.client.get_default_headers()
+        if use_auth and self.client.authorization is not None:
+            headers["Authorization"] = self.client.authorization
+        while resource_url:
+            with requests.get(resource_url, params=params, headers=headers) as r:
+                if r.status_code in (400, 404, 500):
+                    return
+                r.raise_for_status()
+                data = r.json()
+                for resource in data["collection"]:
+                    yield self.convert_dict(resource)
+                resource_url = data.get("next_href", None)
+                parsed = urlparse(resource_url)
+                params = parse_qs(parsed.query)
+                params["client_id"] = self.client.client_id # next_href doesn't contain client_id
+                resource_url = urljoin(resource_url, parsed.path)
+        
+                
+@dataclass
+class ListRequest(Request, Generic[T]):
+    """
+    Requests the resource list at the given url with
+    parameters given by kwargs. Converts the resources
+    to type T and returns them.
+    """
+    def __call__(self, use_auth=True, **kwargs) -> List[T]:
+        resource_url = self.format_url_and_remove_params(kwargs)
+        params = kwargs
+        params["client_id"] = self.client.client_id
+        headers = self.client.get_default_headers()
+        if use_auth and self.client.authorization is not None:
+            headers["Authorization"] = self.client.authorization
+        resources = []
+        with requests.get(resource_url, params=params, headers=headers) as r:
+            if r.status_code in (400, 404, 500):
+                return []
+            r.raise_for_status()
+            for resource in r.json():
+                resources.append(self.convert_dict(resource))
+        return resources

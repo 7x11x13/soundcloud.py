@@ -1,6 +1,6 @@
 import datetime
 from dataclasses import dataclass
-from typing import Optional
+from typing import List, Optional
 
 from soundcloud.resource.base import BaseData
 from soundcloud.resource.visuals import Visuals
@@ -45,7 +45,7 @@ class BasicUser(BaseData):
 class User(BasicUser):
     comments_count: int
     created_at: datetime.datetime
-    creator_subscriptions: list[CreatorSubscription]
+    creator_subscriptions: List[CreatorSubscription]
     creator_subscription: CreatorSubscription
     description: Optional[str]
     followings_count: int

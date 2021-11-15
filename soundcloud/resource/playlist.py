@@ -1,6 +1,6 @@
 import datetime
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 from dacite import from_dict
 
@@ -16,7 +16,7 @@ class BaseAlbumPlaylist(BaseItem):
     is_album: bool
     published_at: Optional[datetime.datetime]
     track_count: int
-    tracks: list[Union[BasicTrack, MiniTrack]]
+    tracks: List[Union[BasicTrack, MiniTrack]]
     
 @dataclass
 class AlbumPlaylist(BaseAlbumPlaylist):

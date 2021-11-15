@@ -1,6 +1,6 @@
 import datetime
 from dataclasses import dataclass
-from typing import Optional
+from typing import List, Optional
 
 from soundcloud.resource.base import BaseData
 from soundcloud.resource.user import BasicUser
@@ -34,7 +34,7 @@ class BaseItem(BaseData):
     user_id: int
     display_date: str
     
-    def get_all_tags(self) -> list[str]:
+    def get_all_tags(self) -> List[str]:
         tags = []
         if self.genre:
             tags.append(self.genre)

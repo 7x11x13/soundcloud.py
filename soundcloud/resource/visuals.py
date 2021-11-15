@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import List
 
 from soundcloud.resource.base import BaseData
 
@@ -12,4 +13,4 @@ class Visual(BaseData):
 class Visuals(BaseData):
     urn: str
     enabled: bool
-    visuals: list[Visual]
+    visuals: List[Visual]
