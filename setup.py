@@ -8,14 +8,14 @@ def readme():
 
 setup(
     name="soundcloud-v2",
-    version="1.1.2",
+    version="1.1.3",
     description="Python wrapper for the v2 SoundCloud API",
     long_description=readme(),
     long_description_content_type='text/markdown',
     author="7x11x13",
     author_email="x7x11x13@gmail.com",
     url="https://github.com/7x11x13/soundcloud.py",
-    packages=["soundcloud"],
+    packages=["soundcloud", "soundcloud.resource"],
     install_requires=[
         "dacite",
         "python-dateutil",
