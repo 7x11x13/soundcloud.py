@@ -50,8 +50,8 @@ class User(BasicUser):
     description: Optional[str]
     followings_count: int
     groups_count: int
-    likes_count: int
-    playlist_likes_count: int
+    likes_count: Optional[int]
+    playlist_likes_count: Optional[int]
     playlist_count: int
     reposts_count: Optional[int]
     track_count: int
