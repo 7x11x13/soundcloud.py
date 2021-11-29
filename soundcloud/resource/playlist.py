@@ -48,7 +48,7 @@ class AlbumPlaylistNoTracks(BaseData):
     user_id: int
     set_type: str
     is_album: bool
-    published_at: datetime.datetime
+    published_at: Optional[datetime.datetime]
     release_date: Optional[str]
     display_date: datetime.datetime
     user: BasicUser
