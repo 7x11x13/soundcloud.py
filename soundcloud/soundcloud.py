@@ -233,11 +233,15 @@ class SoundCloud:
         """
         return self.requests["track_reposters"](track_id=track_id, **kwargs)
         
-    def get_track_original_download(self, track_id: int) -> Optional[str]:
+    def get_track_original_download(self, track_id: int, token: str = None) -> Optional[str]:
         """
-        Get track download
+        Get track original download link. If track is private,
+        requires secret token to be provided (last part of secret URL)
         """
-        download = self.requests["track_original_download"](track_id=track_id)
+        if token:
+            download = self.requests["track_original_download"](track_id=track_id, secret_token=token)
+        else:
+            download = self.requests["track_original_download"](track_id=track_id)
         if download is None:
             return None
         else:

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 from distutils.core import setup
-from soundcloud import __version__
 
 def readme():
     with open('README.md', encoding="UTF-8") as f:
@@ -9,7 +8,7 @@ def readme():
 
 setup(
     name="soundcloud-v2",
-    version=__version__,
+    version="1.1.6",
     description="Python wrapper for the v2 SoundCloud API",
     long_description=readme(),
     long_description_content_type='text/markdown',
