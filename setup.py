@@ -2,13 +2,14 @@
 
 from distutils.core import setup
 
+
 def readme():
     with open('README.md', encoding="UTF-8") as f:
         return f.read()
 
 setup(
     name="soundcloud-v2",
-    version="1.1.6",
+    version="1.2.0",
     description="Python wrapper for the v2 SoundCloud API",
     long_description=readme(),
     long_description_content_type='text/markdown',

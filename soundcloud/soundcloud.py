@@ -1,3 +1,4 @@
+import re
 import string
 from dataclasses import dataclass
 from typing import Dict, Generator, Generic, List, Optional, TypeVar, Union
@@ -29,12 +30,23 @@ from .resource.user import User
 from .resource.web_profile import WebProfile
 
 T = TypeVar("T")
+
+
+class ClientIDGenerationError(Exception):
+    pass
+
         
 class SoundCloud:
     
     DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0"
+    ASSETS_SCRIPTS_REGEX = re.compile(r"src=\"(https:\/\/a-v2\.sndcdn\.com/assets/[^\.]+\.js)\"")
+    CLIENT_ID_REGEX = re.compile(r"client_id:\"([^\"]+)\"")
     
-    def __init__(self, client_id: str, auth_token: str = None, user_agent: str = DEFAULT_USER_AGENT) -> None:
+    def __init__(self, client_id: str = None, auth_token: str = None, user_agent: str = DEFAULT_USER_AGENT) -> None:
+        
+        if not client_id:
+            client_id = self.generate_client_id()
+        
         self.client_id = client_id
         self.auth_token = None
         self.authorization = None
@@ -89,6 +101,20 @@ class SoundCloud:
     
     def get_default_headers(self) -> Dict[str, str]:
         return {"User-Agent": self.user_agent}
+    
+    def generate_client_id(self) -> str:
+        r = requests.get("https://soundcloud.com")
+        r.raise_for_status()
+        matches = self.ASSETS_SCRIPTS_REGEX.findall(r.text)
+        if not matches:
+            raise ClientIDGenerationError("No asset scripts found")
+        url = matches[-1]
+        r = requests.get(url)
+        r.raise_for_status()
+        client_id = self.CLIENT_ID_REGEX.search(r.text)
+        if not client_id:
+            raise ClientIDGenerationError(f"Could not find client_id in script '{url}'")
+        return client_id.group(1)
     
     def is_client_id_valid(self) -> bool:
         """
