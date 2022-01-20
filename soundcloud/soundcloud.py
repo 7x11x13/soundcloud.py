@@ -67,6 +67,7 @@ class SoundCloud:
             "playlist_likers":            CollectionRequest[User](self, "/playlists/{playlist_id}/likers", User),
             "playlist_reposters":         CollectionRequest[User](self, "/playlists/{playlist_id}/reposters", User),
             "track":                      Request[BasicTrack](self, "/tracks/{track_id}", BasicTrack),
+            "tracks":                     ListRequest[BasicTrack](self, "/tracks", BasicTrack),
             "track_albums":               CollectionRequest[BasicAlbumPlaylist](self, "/tracks/{track_id}/albums", BasicAlbumPlaylist), # (can be representation=mini)
             "track_playlists":            CollectionRequest[BasicAlbumPlaylist](self, "/tracks/{track_id}/playlists_without_albums", BasicAlbumPlaylist), # (can be representation=mini)
             "track_comments":             CollectionRequest[BasicComment](self, "/tracks/{track_id}/comments", BasicComment),
@@ -225,6 +226,17 @@ class SoundCloud:
         If the ID is invalid, return None
         """
         return self.requests["track"](track_id=track_id)
+    
+    def get_tracks(self, track_ids: List[int], playlistId: int = None, playlistSecretToken: str = None, **kwargs) -> List[BasicTrack]:
+        """
+        Returns the tracks with the given track_ids.
+        Can be used to get track info for hidden tracks in a hidden playlist.
+        """
+        if playlistId:
+            kwargs["playlistId"] = playlistId
+        if playlistSecretToken:
+            kwargs["playlistSecretToken"] = playlistSecretToken
+        return self.requests["tracks"](ids=",".join([str(id) for id in track_ids]), **kwargs)
     
     def get_track_albums(self, track_id: int, **kwargs) -> Generator[AlbumPlaylist, None, None]:
         """
