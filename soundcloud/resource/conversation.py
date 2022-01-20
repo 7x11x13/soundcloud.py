@@ -1,10 +1,11 @@
 import datetime
 from dataclasses import dataclass
-from typing import List
+from typing import List, Union
 
 from soundcloud.resource.base import BaseData
 from soundcloud.resource.message import Message
-from soundcloud.resource.user import BasicUser
+from soundcloud.resource.user import BasicUser, MissingUser
+
 
 @dataclass
 class Conversation(BaseData):
@@ -13,4 +14,4 @@ class Conversation(BaseData):
     read: bool
     started_at: datetime.datetime
     summary: str
-    users: List[BasicUser]
+    users: List[Union[BasicUser, MissingUser]]

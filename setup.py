@@ -9,7 +9,7 @@ def readme():
 
 setup(
     name="soundcloud-v2",
-    version="1.2.0",
+    version="1.3.0",
     description="Python wrapper for the v2 SoundCloud API",
     long_description=readme(),
     long_description_content_type='text/markdown',

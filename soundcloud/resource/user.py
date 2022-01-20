@@ -4,7 +4,8 @@ from typing import List, Optional
 
 from soundcloud.resource.base import BaseData
 from soundcloud.resource.visuals import Visuals
-    
+
+
 @dataclass
 class Product(BaseData):
     id: str
@@ -56,4 +57,8 @@ class User(BasicUser):
     reposts_count: Optional[int]
     track_count: int
     visuals: Optional[Visuals]
-        
+
+@dataclass
+class MissingUser(BaseData):
+    id: int
+    kind: str
