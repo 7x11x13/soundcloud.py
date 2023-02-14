@@ -2,7 +2,9 @@ import re
 import string
 from dataclasses import dataclass
 from typing import Dict, Generator, Generic, List, Optional, TypeVar, Union
+#print("hard nops")
 
+#exit()
 try:
     from typing import get_args, get_origin
 except ImportError:
@@ -43,7 +45,8 @@ class SoundCloud:
     CLIENT_ID_REGEX = re.compile(r"client_id:\"([^\"]+)\"")
     
     def __init__(self, client_id: str = None, auth_token: str = None, user_agent: str = DEFAULT_USER_AGENT) -> None:
-        
+        #print("jardsa lsgfjia")
+        #exit()
         if not client_id:
             client_id = self.generate_client_id()
         
