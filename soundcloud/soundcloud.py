@@ -488,6 +488,7 @@ class CollectionRequest(Request, Generic[T]):
                     return
                 r.raise_for_status()
                 data = r.json()
+                print(data)
                 for resource in data["collection"]:
                     yield self.convert_dict(resource)
                 resource_url = data.get("next_href", None)
@@ -516,6 +517,7 @@ class ListRequest(Request, Generic[T]):
             if r.status_code in (400, 404, 500):
                 return []
             r.raise_for_status()
+            print(r.json())
             for resource in r.json():
                 resources.append(self.convert_dict(resource))
         return resources
