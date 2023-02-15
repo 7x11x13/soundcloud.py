@@ -26,6 +26,7 @@ from .resource.conversation import Conversation
 from .resource.download import OriginalDownload
 from .resource.like import PlaylistLike, TrackLike
 from .resource.message import Message
+from .resource.history import History, TaggedTrack
 from .resource.playlist import AlbumPlaylist, BasicAlbumPlaylist
 from .resource.track import BasicTrack, Track
 from .resource.user import User
@@ -58,7 +59,7 @@ class SoundCloud:
         self.requests: Dict[str, Request] = {
             "me":                         Request[User](self, "/me", User),
             # get listening history of user with the following key-value pair
-            "history":                    Request[BasicAlbumPlaylist](self, "/me/play-history/tracks", BasicAlbumPlaylist),
+            "history":                    ListRequest[History](self, "/me/play-history/tracks", TaggedTrack),
             "me_stream":                  CollectionRequest[StreamItem](self, "/stream", StreamItem),
             "resolve":                    Request[SearchItem](self, "/resolve", SearchItem),
             "search":                     CollectionRequest[SearchItem](self, "/search", SearchItem),
@@ -167,7 +168,7 @@ class SoundCloud:
         Returns the stream of recent uploads/reposts
         for the client's auth token
         """
-        return self.requests["history"](**kwargs)
+        return self.requests["history"](history=True, **kwargs)
         
     def resolve(self, url: str) -> Optional[SearchItem]:
         """
@@ -517,7 +518,17 @@ class ListRequest(Request, Generic[T]):
             if r.status_code in (400, 404, 500):
                 return []
             r.raise_for_status()
-            print(r.json())
-            for resource in r.json():
-                resources.append(self.convert_dict(resource))
+            # print(r.json())
+
+           
+            if kwargs["history"]:
+                for resource in r.json()["collection"]:
+                    print(type(resource), resource)
+                    resources.append(self.convert_dict(resource))
+            else:
+                for resource in r.json():
+                    print(type(resource), resource)
+                    resources.append(self.convert_dict(resource))
         return resources
+
+
