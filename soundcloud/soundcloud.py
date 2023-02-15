@@ -45,8 +45,7 @@ class SoundCloud:
     CLIENT_ID_REGEX = re.compile(r"client_id:\"([^\"]+)\"")
     
     def __init__(self, client_id: str = None, auth_token: str = None, user_agent: str = DEFAULT_USER_AGENT) -> None:
-        #print("jardsa lsgfjia")
-        #exit()
+
         if not client_id:
             client_id = self.generate_client_id()
         
@@ -58,6 +57,8 @@ class SoundCloud:
         
         self.requests: Dict[str, Request] = {
             "me":                         Request[User](self, "/me", User),
+            # get listening history of user with the following key-value pair
+            "history":                    Request[BasicAlbumPlaylist](self, "/me/play-history/tracks", BasicAlbumPlaylist),
             "me_stream":                  CollectionRequest[StreamItem](self, "/stream", StreamItem),
             "resolve":                    Request[SearchItem](self, "/resolve", SearchItem),
             "search":                     CollectionRequest[SearchItem](self, "/search", SearchItem),
@@ -160,6 +161,13 @@ class SoundCloud:
         for the client's auth token
         """
         return self.requests["me_stream"](**kwargs)
+
+    def get_history(self, **kwargs) -> Generator[StreamItem, None, None]:
+        """
+        Returns the stream of recent uploads/reposts
+        for the client's auth token
+        """
+        return self.requests["history"](**kwargs)
         
     def resolve(self, url: str) -> Optional[SearchItem]:
         """
@@ -451,6 +459,7 @@ class Request(Generic[T]):
             if r.status_code in (400, 404, 500):
                 return None
             r.raise_for_status()
+            print(r.json())
             return self.convert_dict(r.json())
 
 
