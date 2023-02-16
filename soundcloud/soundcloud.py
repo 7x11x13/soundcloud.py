@@ -59,7 +59,7 @@ class SoundCloud:
         self.requests: Dict[str, Request] = {
             "me":                         Request[User](self, "/me", User),
             # get listening history of user with the following key-value pair
-            "history":                    ListRequest[History](self, "/me/play-history/tracks", TaggedTrack),
+            "history":                    ListRequest[History](self, "/me/play-history/tracks", BasicTrack),
             "me_stream":                  CollectionRequest[StreamItem](self, "/stream", StreamItem),
             "resolve":                    Request[SearchItem](self, "/resolve", SearchItem),
             "search":                     CollectionRequest[SearchItem](self, "/search", SearchItem),
@@ -524,11 +524,9 @@ class ListRequest(Request, Generic[T]):
             if kwargs["history"]:
                 for resource in r.json()["collection"]:
                     print(type(resource), resource)
-                    resources.append(self.convert_dict(resource))
+                    resources.append(self.convert_dict(resource["track"]))
             else:
                 for resource in r.json():
                     print(type(resource), resource)
                     resources.append(self.convert_dict(resource))
         return resources
-
-
