@@ -59,7 +59,7 @@ class SoundCloud:
         self.requests: Dict[str, Request] = {
             "me":                         Request[User](self, "/me", User),
             # get listening history of user with the following key-value pair
-            "history":                    ListRequest[History](self, "/me/play-history/tracks", BasicTrack),
+            "history":                    ListRequest[History](self, "/me/play-history/tracks", History),
             "me_stream":                  CollectionRequest[StreamItem](self, "/stream", StreamItem),
             "resolve":                    Request[SearchItem](self, "/resolve", SearchItem),
             "search":                     CollectionRequest[SearchItem](self, "/search", SearchItem),
@@ -521,10 +521,23 @@ class ListRequest(Request, Generic[T]):
             # print(r.json())
 
            
+           # Maybe all of the following could be moved to a separate function that handles the hybrid situation of LIST and COLLECTION
+            
+            # for history as a list of BasicTrack(s) ; throws some data away
+            # if kwargs["history"]:
+            #     for resource in r.json()["collection"]:
+            #         print(type(resource), resource)
+            #         resources.append(self.convert_dict(resource["track"]))
+
             if kwargs["history"]:
-                for resource in r.json()["collection"]:
-                    print(type(resource), resource)
-                    resources.append(self.convert_dict(resource["track"]))
+                self.return_type = TaggedTrack
+                tagged_tracks = []
+                for track in r.json()["collection"]:
+                    tagged_tracks.append(self.convert_dict(track))  
+                
+                # To use the same function for history and tagged tracks
+                self.return_type = History
+                return self.convert_dict(dict(tracks=tagged_tracks))
             else:
                 for resource in r.json():
                     print(type(resource), resource)
