@@ -516,31 +516,8 @@ class ListRequest(Request, Generic[T]):
             if r.status_code in (400, 404, 500):
                 return []
             r.raise_for_status()
-            # print(r.json())
-
-           
-           # Maybe all of the following could be moved to a separate function that handles the hybrid situation of LIST and COLLECTION
-            
-            # for history as a list of BasicTrack(s) ; throws some data away
-            # if kwargs["history"]:
-            #     for resource in r.json()["collection"]:
-            #         print(type(resource), resource)
-            #         resources.append(self.convert_dict(resource["track"]))
-
-            # for history as a list of TaggedTrack(s) ; keeps all data
             if kwargs.get("history"):
-                # Because the history endpoint returns a nested json of dict within list within dict
-                # we need to convert the dict to a class and then convert the list to a class
-                # to make History a list of TaggedTracks where TaggedTrack has tracks and few more data fields
-                # comment partially written by copilot
-                self.return_type = TaggedTrack
-                tagged_tracks = []
-                for track in r.json()["collection"]:
-                    tagged_tracks.append(self.convert_dict(track))  
-                
-                # To use the same function for history and tagged tracks
-                self.return_type = History
-                return self.convert_dict(dict(tracks=tagged_tracks))
+                return self.convert_dict(dict(tracks=r.json()["collection"]))
             else:
                 for resource in r.json():
                     resources.append(self.convert_dict(resource))
