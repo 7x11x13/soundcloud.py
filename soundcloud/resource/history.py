@@ -6,6 +6,7 @@ from typing import List
 from soundcloud.resource.base import BaseData
 from soundcloud.resource.track import BasicTrack
 
+
 """Hello copilot!
 
 Write a dataclass that has the following attributes:
@@ -18,8 +19,8 @@ The dataclass should be called TaggedTrack
 
 """
 
-# @dataclass
 # This was inaccurate so here's my version
+@dataclass
 class TaggedTrack(BaseData):
     played_at: int
     track_id: int
