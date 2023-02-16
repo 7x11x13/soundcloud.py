@@ -529,7 +529,12 @@ class ListRequest(Request, Generic[T]):
             #         print(type(resource), resource)
             #         resources.append(self.convert_dict(resource["track"]))
 
+            # for history as a list of TaggedTrack(s) ; keeps all data
             if kwargs["history"]:
+                # Because the history endpoint returns a nested json of dict within list within dict
+                # we need to convert the dict to a class and then convert the list to a class
+                # to make History a list of TaggedTracks where TaggedTrack is has tracks and few more data fields
+                # comment partially written by copilot
                 self.return_type = TaggedTrack
                 tagged_tracks = []
                 for track in r.json()["collection"]:
