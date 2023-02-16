@@ -460,7 +460,6 @@ class Request(Generic[T]):
             if r.status_code in (400, 404, 500):
                 return None
             r.raise_for_status()
-            print(r.json())
             return self.convert_dict(r.json())
 
 
@@ -489,7 +488,6 @@ class CollectionRequest(Request, Generic[T]):
                     return
                 r.raise_for_status()
                 data = r.json()
-                print(data)
                 for resource in data["collection"]:
                     yield self.convert_dict(resource)
                 resource_url = data.get("next_href", None)
@@ -530,10 +528,10 @@ class ListRequest(Request, Generic[T]):
             #         resources.append(self.convert_dict(resource["track"]))
 
             # for history as a list of TaggedTrack(s) ; keeps all data
-            if kwargs["history"]:
+            if kwargs.get("history"):
                 # Because the history endpoint returns a nested json of dict within list within dict
                 # we need to convert the dict to a class and then convert the list to a class
-                # to make History a list of TaggedTracks where TaggedTrack is has tracks and few more data fields
+                # to make History a list of TaggedTracks where TaggedTrack has tracks and few more data fields
                 # comment partially written by copilot
                 self.return_type = TaggedTrack
                 tagged_tracks = []
@@ -545,6 +543,5 @@ class ListRequest(Request, Generic[T]):
                 return self.convert_dict(dict(tracks=tagged_tracks))
             else:
                 for resource in r.json():
-                    print(type(resource), resource)
                     resources.append(self.convert_dict(resource))
         return resources
