@@ -62,3 +62,8 @@ class User(BasicUser):
 class MissingUser(BaseData):
     id: int
     kind: str
+
+@dataclass
+class UserStatus(BaseData):
+    status: str
+    timestamp: str

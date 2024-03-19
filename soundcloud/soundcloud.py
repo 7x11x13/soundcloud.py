@@ -26,7 +26,7 @@ from .resource.like import PlaylistLike, TrackLike
 from .resource.message import Message
 from .resource.playlist import AlbumPlaylist, BasicAlbumPlaylist
 from .resource.track import BasicTrack, Track
-from .resource.user import User
+from .resource.user import User, UserStatus
 from .resource.web_profile import WebProfile
 
 T = TypeVar("T")
@@ -122,7 +122,7 @@ class SoundCloud:
         Checks if current client_id is valid
         """
         try:
-            self.get_track(1032303631)
+            self.requests["track"](track_id=1032303631, use_auth=False)
             return True
         except HTTPError as err:
             if err.response.status_code == 401:
@@ -135,7 +135,7 @@ class SoundCloud:
         Checks if current auth_token is valid
         """
         try:
-            self.requests["me"](auth_token=self.auth_token)
+            self.requests["me"]()
             return True
         except HTTPError as err:
             if err.response.status_code == 401:
@@ -143,7 +143,7 @@ class SoundCloud:
             else:
                 raise
     
-    def get_me(self) -> User:
+    def get_me(self) -> UserStatus:
         """
         Gets the user associated with client's auth token
         """
