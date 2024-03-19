@@ -9,8 +9,8 @@ def test_search_albums(client: SoundCloud):
     assert isinstance(album, AlbumPlaylist) and album.user.username == "Ariana Grande"
 
 def test_search_playlists(client: SoundCloud):
-    playlist = next(client.search_playlists("playlist"))
-    assert isinstance(playlist, AlbumPlaylist) and playlist.title.lower() == "playlist"
+    playlist = next(client.search_playlists("we do a little music"))
+    assert isinstance(playlist, AlbumPlaylist) and playlist.title.lower() == "We Do A Little Music [incomplete]"
     
 def test_search_tracks(client: SoundCloud):
     track = next(client.search_tracks("34+35"))
