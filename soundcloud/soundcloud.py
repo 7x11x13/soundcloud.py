@@ -122,9 +122,7 @@ class SoundCloud:
         Checks if current client_id is valid
         """
         try:
-            next(
-                self.requests["tag_recent_tracks"](tag="electronic", limit="1", use_auth=False)
-            )
+            self.get_track(1032303631)
             return True
         except HTTPError as err:
             if err.response.status_code == 401:
