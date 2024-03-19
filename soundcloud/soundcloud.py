@@ -195,7 +195,7 @@ class SoundCloud:
         
     def get_tag_tracks_recent(self, tag: str, **kwargs) -> Generator[Track, None, None]:
         """
-        Get most recent tracks for this tag
+        Get most recent tracks for this tag. Might be obsolete?
         """
         return self.requests["tag_recent_tracks"](tag=tag, **kwargs)
         
