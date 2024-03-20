@@ -19,4 +19,4 @@ from soundcloud.resource.visuals import Visual, Visuals
 from soundcloud.resource.web_profile import WebProfile
 from soundcloud.soundcloud import SoundCloud
 
-__version__ = "1.3.6"
+__version__ = "1.3.7"
