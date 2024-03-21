@@ -2,7 +2,9 @@ import re
 import string
 from dataclasses import dataclass
 from typing import Dict, Generator, Generic, List, Optional, TypeVar, Union
+#print("hard nops")
 
+#exit()
 try:
     from typing import get_args, get_origin
 except ImportError:
@@ -24,6 +26,7 @@ from .resource.conversation import Conversation
 from .resource.download import OriginalDownload
 from .resource.like import PlaylistLike, TrackLike
 from .resource.message import Message
+from .resource.history import History, TaggedTrack
 from .resource.playlist import AlbumPlaylist, BasicAlbumPlaylist
 from .resource.track import BasicTrack, Track
 from .resource.user import User, UserStatus
@@ -43,7 +46,7 @@ class SoundCloud:
     CLIENT_ID_REGEX = re.compile(r"client_id:\"([^\"]+)\"")
     
     def __init__(self, client_id: str = None, auth_token: str = None, user_agent: str = DEFAULT_USER_AGENT) -> None:
-        
+
         if not client_id:
             client_id = self.generate_client_id()
         
@@ -55,6 +58,8 @@ class SoundCloud:
         
         self.requests: Dict[str, Request] = {
             "me":                         Request[User](self, "/me", User),
+            # get listening history of user with the following key-value pair
+            "history":                    ListRequest[History](self, "/me/play-history/tracks", History),
             "me_stream":                  CollectionRequest[StreamItem](self, "/stream", StreamItem),
             "resolve":                    Request[SearchItem](self, "/resolve", SearchItem),
             "search":                     CollectionRequest[SearchItem](self, "/search", SearchItem),
@@ -155,6 +160,13 @@ class SoundCloud:
         for the client's auth token
         """
         return self.requests["me_stream"](**kwargs)
+
+    def get_history(self, **kwargs) -> Generator[StreamItem, None, None]:
+        """
+        Returns the stream of recent uploads/reposts
+        for the client's auth token
+        """
+        return self.requests["history"](history=True, **kwargs)
         
     def resolve(self, url: str) -> Optional[SearchItem]:
         """
@@ -502,6 +514,9 @@ class ListRequest(Request, Generic[T]):
             if r.status_code in (400, 404, 500):
                 return []
             r.raise_for_status()
-            for resource in r.json():
-                resources.append(self.convert_dict(resource))
+            if kwargs.get("history"):
+                return self.convert_dict(dict(tracks=r.json()["collection"]))
+            else:
+                for resource in r.json():
+                    resources.append(self.convert_dict(resource))
         return resources
