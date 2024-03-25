@@ -45,7 +45,6 @@ class BaseTrack(BaseItem):
     purchase_url: Optional[str]
     state: str
     streamable: bool
-    track_format: str
     urn: str
     visuals: Optional[Visuals]
     waveform_url: str
