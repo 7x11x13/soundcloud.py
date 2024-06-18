@@ -15,9 +15,9 @@ from soundcloud.resource.track import (BasicTrack, CommentTrack, Format, Media,
                                        MiniTrack, PublisherMetadata, Track,
                                        Transcoding)
 from soundcloud.resource.user import (Badges, BasicUser, CreatorSubscription,
-                                      Product, User)
+                                      Product, User, UserEmail)
 from soundcloud.resource.visuals import Visual, Visuals
 from soundcloud.resource.web_profile import WebProfile
 from soundcloud.soundcloud import SoundCloud
 
-__version__ = "1.3.7"
+__version__ = "1.3.8"
