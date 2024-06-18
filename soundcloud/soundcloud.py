@@ -27,7 +27,7 @@ from .resource.download import OriginalDownload
 from .resource.message import Message
 from .resource.playlist import AlbumPlaylist, BasicAlbumPlaylist
 from .resource.track import BasicTrack, Track
-from .resource.user import User, UserStatus
+from .resource.user import User, UserEmail, UserStatus
 from .resource.web_profile import WebProfile
 
 T = TypeVar("T")
@@ -82,6 +82,7 @@ class SoundCloud:
             "user_conversation_messages": CollectionRequest[Message](self, "/users/{user_id}/conversations/{conversation_id}/messages", Message),
             "user_conversations":         CollectionRequest[Conversation](self, "/users/{user_id}/conversations", Conversation),
             "user_conversations_unread":  CollectionRequest[Conversation](self, "/users/{user_id}/conversations/unread", Conversation),
+            "user_emails":                CollectionRequest[UserEmail](self, "/users/{user_id}/emails", UserEmail),
             "user_featured_profiles":     CollectionRequest[User](self, "/users/{user_id}/featured-profiles", User),
             "user_followers":             CollectionRequest[User](self, "/users/{user_id}/followers", User),
             "user_followings":            CollectionRequest[User](self, "/users/{user_id}/followings", User),
@@ -288,7 +289,8 @@ class SoundCloud:
     def get_track_original_download(self, track_id: int, token: str = None) -> Optional[str]:
         """
         Get track original download link. If track is private,
-        requires secret token to be provided (last part of secret URL)
+        requires secret token to be provided (last part of secret URL).
+        Requires authentication.
         """
         if token:
             download = self.requests["track_original_download"](track_id=track_id, secret_token=token)
@@ -342,6 +344,12 @@ class SoundCloud:
         Get conversations unread by this user
         """
         return self.requests["user_conversations_unread"](user_id=user_id, **kwargs)
+
+    def get_user_emails(self, user_id: int, **kwargs) -> Generator[UserEmail, None, None]:
+        """
+        Get user's email addresses. Requires authentication.
+        """
+        return self.requests["user_emails"](user_id=user_id, **kwargs)
 
     def get_user_featured_profiles(self, user_id: int, **kwargs) -> Generator[User, None, None]:
         """

@@ -81,3 +81,8 @@ def test_user_links(client: SoundCloud):
     user = client.get_user(992430331)
     profiles = client.get_user_links(user.urn)
     assert profiles[0].title == "test"
+
+
+def test_user_emails(client: SoundCloud):
+    email = next(client.get_user_emails(790976431))
+    assert email.address.endswith("gmail.com")
