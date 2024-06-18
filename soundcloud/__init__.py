@@ -3,6 +3,7 @@ from soundcloud.resource.aliases import (Like, RepostItem, SearchItem,
 from soundcloud.resource.comment import Comment, CommentSelf, CommentTrack
 from soundcloud.resource.conversation import Conversation
 from soundcloud.resource.download import OriginalDownload
+from soundcloud.resource.history import HistoryItem
 from soundcloud.resource.like import PlaylistLike, TrackLike
 from soundcloud.resource.message import Message
 from soundcloud.resource.playlist import (AlbumPlaylist, AlbumPlaylistNoTracks,

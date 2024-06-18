@@ -2,8 +2,6 @@ import datetime
 from dataclasses import dataclass
 from typing import Optional
 
-from dacite import from_dict, Config
-
 from soundcloud.resource.base import BaseData
 from soundcloud.resource.track import BasicTrack
 from soundcloud.resource.playlist import BasicAlbumPlaylist

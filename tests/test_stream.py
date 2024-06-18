@@ -2,6 +2,11 @@ import itertools
 
 from soundcloud import SoundCloud, TrackStreamItem
 
+def test_my_history(client: SoundCloud):
+    stream = client.get_my_history()
+    for item in itertools.islice(stream, 3):
+        assert item is not None
+
 def test_my_stream(client: SoundCloud):
     stream = client.get_my_stream()
     for item in itertools.islice(stream, 3):

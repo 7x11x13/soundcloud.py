@@ -3,6 +3,8 @@ import string
 from dataclasses import dataclass
 from typing import Dict, Generator, Generic, List, Optional, TypeVar, Union
 
+from soundcloud.resource.history import HistoryItem
+
 try:
     from typing import get_args, get_origin
 except ImportError:
@@ -22,7 +24,6 @@ from .resource.aliases import Like, RepostItem, SearchItem, StreamItem
 from .resource.comment import BasicComment, Comment
 from .resource.conversation import Conversation
 from .resource.download import OriginalDownload
-from .resource.like import PlaylistLike, TrackLike
 from .resource.message import Message
 from .resource.playlist import AlbumPlaylist, BasicAlbumPlaylist
 from .resource.track import BasicTrack, Track
@@ -55,6 +56,7 @@ class SoundCloud:
         
         self.requests: Dict[str, Request] = {
             "me":                         Request[User](self, "/me", User),
+            "me_history":                 CollectionRequest[HistoryItem](self, "/me/play-history/tracks", HistoryItem),
             "me_stream":                  CollectionRequest[StreamItem](self, "/stream", StreamItem),
             "resolve":                    Request[SearchItem](self, "/resolve", SearchItem),
             "search":                     CollectionRequest[SearchItem](self, "/search", SearchItem),
@@ -149,6 +151,13 @@ class SoundCloud:
         """
         return self.requests["me"]()
     
+    def get_my_history(self, **kwargs) -> Generator[HistoryItem, None, None]:
+        """
+        Returns the stream of recently listened tracks
+        for the client's auth token
+        """
+        return self.requests["me_history"](**kwargs)
+    
     def get_my_stream(self, **kwargs) -> Generator[StreamItem, None, None]:
         """
         Returns the stream of recent uploads/reposts
@@ -195,7 +204,7 @@ class SoundCloud:
         
     def get_tag_tracks_recent(self, tag: str, **kwargs) -> Generator[Track, None, None]:
         """
-        Get most recent tracks for this tag. Might be obsolete?
+        Get most recent tracks for this tag
         """
         return self.requests["tag_recent_tracks"](tag=tag, **kwargs)
         

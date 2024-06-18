@@ -2,6 +2,7 @@ import itertools
 
 from soundcloud import SoundCloud, User
 
+
 def test_valid_user_id(client: SoundCloud):
     user = client.get_user(790976431)
     assert isinstance(user, User) and user.permalink == "7x11x13"
@@ -9,7 +10,7 @@ def test_valid_user_id(client: SoundCloud):
 def test_invalid_user_id(client: SoundCloud):
     user = client.get_user("0")
     assert user is None
-    
+
 def test_valid_username(client: SoundCloud):
     user = client.get_user_by_username("7x11x13")
     assert isinstance(user, User) and user.permalink == "7x11x13"
@@ -17,11 +18,11 @@ def test_valid_username(client: SoundCloud):
 def test_invalid_username(client: SoundCloud):
     user = client.get_user_by_username("")
     assert user is None
-    
+
 def test_user_comments(client: SoundCloud):
     comment = next(client.get_user_comments(992430331))
     assert comment.body == "hi"
-    
+
 def test_user_conversation_messages(client: SoundCloud):
     message = next(client.get_conversation_messages(790976431, 992430331))
     assert message.content == "bye"
@@ -52,7 +53,7 @@ def test_user_likes(client: SoundCloud):
 def test_user_likes_2(client: SoundCloud):
     for like in itertools.islice(client.get_user_likes(790976431), 10):
         assert like is not None
-    
+
 def test_user_reposts(client: SoundCloud):
     repost = next(client.get_user_reposts(992430331))
     assert repost.track.title == "Wan Bushi - Eurodance Vibes (part 1+2+3)"
@@ -60,11 +61,11 @@ def test_user_reposts(client: SoundCloud):
 def test_user_tracks(client: SoundCloud):
     tracks = list(client.get_user_tracks(790976431))
     assert tracks[-1].title == "Wan Bushi - Eurodance Vibes (part 1+2+3)"
-    
+
 def test_user_toptracks(client: SoundCloud):
     tracks = list(client.get_user_popular_tracks(790976431))
     assert tracks[0].title == "Wan Bushi - Eurodance Vibes (part 1+2+3)"
-    
+
 def test_user_albums(client: SoundCloud):
     found = False
     for album in client.get_user_albums(211111464):

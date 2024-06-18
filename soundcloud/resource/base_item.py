@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import List, Optional
 
 from soundcloud.resource.base import BaseData
-from soundcloud.resource.user import BasicUser
 
 @dataclass
 class BaseItem(BaseData):

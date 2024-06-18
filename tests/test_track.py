@@ -51,6 +51,7 @@ def test_track_likers(client: SoundCloud):
 def test_track_tags(client: SoundCloud):
     track = client.get_track(1032303631)
     tags = track.get_all_tags()
+    assert len(tags) == 2
     assert "Wan Bushi" in tags and "Electronic" in tags
 
 def test_track_original_download(client: SoundCloud):

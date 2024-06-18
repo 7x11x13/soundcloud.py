@@ -67,3 +67,14 @@ class MissingUser(BaseData):
 class UserStatus(BaseData):
     status: str
     timestamp: str
+    
+@dataclass
+class UserEmail(BaseData):
+    address: str
+    confirmed: bool
+    id: int
+    kind: str
+    last_modified: datetime.datetime
+    primary: bool
+    urn: str
+    user_id: str
