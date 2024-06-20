@@ -17,6 +17,10 @@ I made this library so developers can use SoundCloud's internal API for their pr
 
 [^1]: https://docs.google.com/forms/d/e/1FAIpQLSfNxc82RJuzC0DnISat7n4H-G7IsPQIdaMpe202iiHZEoso9w/closedform
 
+## Documentation
+
+https://7x11x13.xyz/soundcloud.py
+
 ## Installation
 
 ```bash

@@ -24,6 +24,10 @@ I made this library so developers can use SoundCloud's internal API for their pr
 pip install soundcloud-v2
 ```
 
+## Documentation
+
+https://7x11x13.xyz/soundcloud.py
+
 ## Example
 
 ```python
