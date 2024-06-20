@@ -62,10 +62,10 @@ class SoundCloud:
             client_id = self.generate_client_id()
 
         self.client_id = client_id
-        self.auth_token = None
         self._user_agent = user_agent
-        self._set_auth_token(auth_token)
+        self.auth_token = None
         self._authorization = None
+        self._set_auth_token(auth_token)
 
         self._requests: Dict[str, Request] = {
             "me":                         Request[User](self, "/me", User),
