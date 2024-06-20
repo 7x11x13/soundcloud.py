@@ -24,7 +24,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         client_id: ${{ secrets.CLIENT_ID }}
         auth_token: ${{ secrets.AUTH_TOKEN }}
-      run:
+      run: |
         coverage run --source=soundcloud -m pytest
         coveralls --service=github
   publish:
