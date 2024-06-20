@@ -3,9 +3,10 @@ from dataclasses import dataclass
 from typing import Optional
 
 from soundcloud.resource.base import BaseData
-from soundcloud.resource.track import BasicTrack
 from soundcloud.resource.playlist import BasicAlbumPlaylist
+from soundcloud.resource.track import BasicTrack
 from soundcloud.resource.user import BasicUser
+
 
 @dataclass
 class BaseStreamItem(BaseData):
@@ -27,16 +28,20 @@ class BaseStreamRepostItem(BaseStreamItem):
 
 @dataclass
 class TrackStreamItem(BaseStreamItem):
+    """Track post in user's feed"""
     track: BasicTrack
-    
+
 @dataclass
 class TrackStreamRepostItem(BaseStreamRepostItem):
+    """Track repost in user's feed"""
     track: BasicTrack
-    
+
 @dataclass
 class PlaylistStreamItem(BaseStreamItem):
+    """Album or playlist post in user's feed"""
     playlist: BasicAlbumPlaylist
-    
+
 @dataclass
 class PlaylistStreamRepostItem(BaseStreamRepostItem):
+    """Album or playlist repost in user's feed"""
     playlist: BasicAlbumPlaylist

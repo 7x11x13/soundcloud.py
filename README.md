@@ -9,7 +9,7 @@
 
 Python wrapper for some of the internal v2 SoundCloud API (read/GET only methods). Does not require an API key.
 
-## NOTE: This is NOT the official [SoundCloud developer API](https://developers.soundcloud.com/docs/api/guide)
+### NOTE: This is NOT the official [SoundCloud developer API](https://developers.soundcloud.com/docs/api/guide)
 
 SoundCloud is not accepting any more application registration requests [^1] so
 I made this library so developers can use SoundCloud's internal API for their projects.

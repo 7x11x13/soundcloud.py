@@ -16,12 +16,14 @@ class CreatorSubscription(BaseData):
 
 @dataclass
 class Badges(BaseData):
+    """User badges"""
     pro: bool
     pro_unlimited: bool
     verified: bool
 
 @dataclass
 class BasicUser(BaseData):
+    """User with partial information"""
     avatar_url: str
     first_name: str
     followers_count: int
@@ -44,6 +46,7 @@ class BasicUser(BaseData):
 
 @dataclass
 class User(BasicUser):
+    """User with full information"""
     comments_count: int
     created_at: datetime.datetime
     creator_subscriptions: List[CreatorSubscription]
@@ -60,6 +63,7 @@ class User(BasicUser):
 
 @dataclass
 class MissingUser(BaseData):
+    """Deleted user"""
     id: int
     kind: str
 
@@ -67,9 +71,10 @@ class MissingUser(BaseData):
 class UserStatus(BaseData):
     status: str
     timestamp: str
-    
+
 @dataclass
 class UserEmail(BaseData):
+    """Email address associated with a user"""
     address: str
     confirmed: bool
     id: int

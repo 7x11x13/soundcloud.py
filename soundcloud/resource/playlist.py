@@ -7,6 +7,7 @@ from soundcloud.resource.base_item import BaseItem
 from soundcloud.resource.track import BasicTrack, MiniTrack
 from soundcloud.resource.user import BasicUser, User
 
+
 @dataclass
 class BaseAlbumPlaylist(BaseItem):
     managed_by_feeds: bool
@@ -15,17 +16,20 @@ class BaseAlbumPlaylist(BaseItem):
     published_at: Optional[datetime.datetime]
     track_count: int
     tracks: List[Union[BasicTrack, MiniTrack]]
-    
+
 @dataclass
 class AlbumPlaylist(BaseAlbumPlaylist):
+    """Playlist or album with full user info"""
     user: User
-    
+
 @dataclass
 class BasicAlbumPlaylist(BaseAlbumPlaylist):
+    """Playlist or album with partial user info"""
     user: BasicUser
 
 @dataclass
 class AlbumPlaylistNoTracks(BaseData):
+    """Playlist or album with no track info"""
     artwork_url: Optional[str]
     created_at: datetime.datetime
     duration: int

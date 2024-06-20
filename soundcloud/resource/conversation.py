@@ -9,6 +9,7 @@ from soundcloud.resource.user import BasicUser, MissingUser
 
 @dataclass
 class Conversation(BaseData):
+    """DM conversation between two users"""
     id: str
     last_message: Message
     read: bool

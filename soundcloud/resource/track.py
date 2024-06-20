@@ -4,29 +4,34 @@ from typing import List, Optional
 
 from soundcloud.resource.base import BaseData
 from soundcloud.resource.base_item import BaseItem
-from soundcloud.resource.user import User, BasicUser
+from soundcloud.resource.user import BasicUser, User
 from soundcloud.resource.visuals import Visuals
+
 
 @dataclass
 class Format(BaseData):
+    """Track file format"""
     protocol: str
     mime_type: str
-    
+
 @dataclass
 class Transcoding(BaseData):
+    """Available transcoding for track"""
     url: str
     preset: str
     duration: int
     snipped: bool
     format: Format
     quality: str
-    
+
 @dataclass
 class Media(BaseData):
+    """List of available transcodings"""
     transcodings: List[Transcoding]
-    
+
 @dataclass
 class PublisherMetadata(BaseData):
+    """Publisher info"""
     id: str
     urn: str
     contains_music: bool
@@ -57,21 +62,25 @@ class BaseTrack(BaseItem):
 
 @dataclass
 class Track(BaseTrack):
+    """Track with full user info"""
     user: User
 
 @dataclass
 class BasicTrack(BaseTrack):
+    """Track with partial user info"""
     user: BasicUser
-    
+
 @dataclass
 class MiniTrack(BaseData):
+    """Track with minimal info"""
     id: int
     kind: str
     monetization_model: str
     policy: str
-    
+
 @dataclass
 class CommentTrack(BaseData):
+    """Track with partial info"""
     artwork_url: Optional[str]
     caption: Optional[str]
     id: int
