@@ -1,4 +1,3 @@
-import functools
 import itertools
 import re
 from typing import Dict, Generator, List, Optional
