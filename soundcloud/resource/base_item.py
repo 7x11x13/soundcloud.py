@@ -4,6 +4,7 @@ from typing import List, Optional
 
 from soundcloud.resource.base import BaseData
 
+
 @dataclass
 class BaseItem(BaseData):
     artwork_url: Optional[str]
@@ -32,7 +33,7 @@ class BaseItem(BaseData):
     uri: str
     user_id: int
     display_date: str
-    
+
     def get_all_tags(self) -> List[str]:
         tags = []
         if self.genre:

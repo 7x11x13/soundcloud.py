@@ -2,6 +2,7 @@ from soundcloud.resource.aliases import Like, RepostItem, SearchItem, StreamItem
 from soundcloud.resource.comment import BasicComment, Comment, CommentSelf
 from soundcloud.resource.conversation import Conversation
 from soundcloud.resource.download import OriginalDownload
+from soundcloud.resource.graphql import CommentWithInteractions
 from soundcloud.resource.history import HistoryItem
 from soundcloud.resource.like import PlaylistLike, TrackLike
 from soundcloud.resource.message import Message
@@ -44,6 +45,7 @@ __all__ = [
     "StreamItem",
     "BasicComment",
     "Comment",
+    "CommentWithInteractions",
     "CommentSelf",
     "Conversation",
     "OriginalDownload",

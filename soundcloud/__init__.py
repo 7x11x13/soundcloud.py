@@ -45,6 +45,12 @@ Some methods require authentication in the form of an OAuth2 access token.
 You can find your token in your browser cookies for SoundCloud under the name "oauth_token".
 A new token will be generated each time you log out and log back in.
 
+## Notes on `**kwargs`
+All API methods have a `**kwargs` argument which you can use to pass extra, undocumented
+arguments to the SoundCloud v2 API in case I missed some parameter which you find useful.
+If this is the case, feel free to create an issue or pull request to document the missing
+argument.
+
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
 
@@ -57,6 +63,6 @@ from soundcloud.resource import __all__ as res_all
 from soundcloud.soundcloud import *
 from soundcloud.soundcloud import __all__ as sc_all
 
-__version__ = "1.3.10"
+__version__ = "1.4.0"
 
 __all__ = sc_all + ex_all + res_all

@@ -1,25 +1,21 @@
+import functools
+import itertools
 import re
-import string
-from dataclasses import dataclass
-from typing import Dict, Generator, Generic, List, Optional, TypeVar, Union
-
-from soundcloud.exceptions import ClientIDGenerationError
-from soundcloud.resource.history import HistoryItem
-
-try:
-    from typing import get_args, get_origin
-except ImportError:
-    # get_args and get_origin shim for version < 3.8
-    def get_args(tp):
-        return getattr(tp, "__args__", ())
-    
-    def get_origin(tp):
-        return getattr(tp, "__origin__", None)
-
-from urllib.parse import parse_qs, urljoin, urlparse
+from typing import Dict, Generator, List, Optional
 
 import requests
 from requests import HTTPError
+
+from soundcloud.exceptions import ClientIDGenerationError
+from soundcloud.requests import (
+    CollectionRequest,
+    ListRequest,
+    Request,
+    UserInteractionsQueryParams,
+    UserInteractionsRequest,
+)
+from soundcloud.resource.graphql import CommentWithInteractions
+from soundcloud.resource.history import HistoryItem
 
 from .resource.aliases import Like, RepostItem, SearchItem, StreamItem
 from .resource.comment import BasicComment, Comment
@@ -30,8 +26,6 @@ from .resource.playlist import AlbumPlaylist, BasicAlbumPlaylist
 from .resource.track import BasicTrack, Track
 from .resource.user import User, UserEmail, UserStatus
 from .resource.web_profile import WebProfile
-
-T = TypeVar("T")
 
 
 class SoundCloud:
@@ -63,59 +57,130 @@ class SoundCloud:
 
         self.client_id = client_id
         self._user_agent = user_agent
-        self.auth_token = None
+        self._auth_token = None
         self._authorization = None
-        self._set_auth_token(auth_token)
+        self.auth_token = auth_token
 
         self._requests: Dict[str, Request] = {
-            "me":                         Request[User](self, "/me", User),
-            "me_history":                 CollectionRequest[HistoryItem](self, "/me/play-history/tracks", HistoryItem),
-            "me_stream":                  CollectionRequest[StreamItem](self, "/stream", StreamItem),
-            "resolve":                    Request[SearchItem](self, "/resolve", SearchItem),
-            "search":                     CollectionRequest[SearchItem](self, "/search", SearchItem),
-            "search_albums":              CollectionRequest[AlbumPlaylist](self, "/search/albums", AlbumPlaylist), # ?filter.genre_or_tag
-            "search_playlists":           CollectionRequest[AlbumPlaylist](self, "/search/playlists_without_albums", AlbumPlaylist),
-            "search_tracks":              CollectionRequest[Track](self, "/search/tracks", Track), #?filter.created_at&filter.duration&filter.license
-            "search_users":               CollectionRequest[User](self, "/search/users", User), #?filter.place
-            "tag_recent_tracks":          CollectionRequest[Track](self, "/recent-tracks/{tag}", Track),
-            "playlist":                   Request[BasicAlbumPlaylist](self, "/playlists/{playlist_id}", BasicAlbumPlaylist),
-            "playlist_likers":            CollectionRequest[User](self, "/playlists/{playlist_id}/likers", User),
-            "playlist_reposters":         CollectionRequest[User](self, "/playlists/{playlist_id}/reposters", User),
-            "track":                      Request[BasicTrack](self, "/tracks/{track_id}", BasicTrack),
-            "tracks":                     ListRequest[BasicTrack](self, "/tracks", BasicTrack),
-            "track_albums":               CollectionRequest[BasicAlbumPlaylist](self, "/tracks/{track_id}/albums", BasicAlbumPlaylist), # (can be representation=mini)
-            "track_playlists":            CollectionRequest[BasicAlbumPlaylist](self, "/tracks/{track_id}/playlists_without_albums", BasicAlbumPlaylist), # (can be representation=mini)
-            "track_comments":             CollectionRequest[BasicComment](self, "/tracks/{track_id}/comments", BasicComment),
-            "track_likers":               CollectionRequest[User](self, "/tracks/{track_id}/likers", User),
-            "track_related":              CollectionRequest[BasicTrack](self, "/tracks/{track_id}/related", BasicTrack),
-            "track_reposters":            CollectionRequest[User](self, "/tracks/{track_id}/reposters", User),
-            "track_original_download":    Request[OriginalDownload](self, "/tracks/{track_id}/download", OriginalDownload),
-            "user":                       Request[User](self, "/users/{user_id}", User),
-            "user_comments":              CollectionRequest[Comment](self, "/users/{user_id}/comments", Comment),
-            "user_conversation_messages": CollectionRequest[Message](self, "/users/{user_id}/conversations/{conversation_id}/messages", Message),
-            "user_conversations":         CollectionRequest[Conversation](self, "/users/{user_id}/conversations", Conversation),
-            "user_conversations_unread":  CollectionRequest[Conversation](self, "/users/{user_id}/conversations/unread", Conversation),
-            "user_emails":                CollectionRequest[UserEmail](self, "/users/{user_id}/emails", UserEmail),
-            "user_featured_profiles":     CollectionRequest[User](self, "/users/{user_id}/featured-profiles", User),
-            "user_followers":             CollectionRequest[User](self, "/users/{user_id}/followers", User),
-            "user_followings":            CollectionRequest[User](self, "/users/{user_id}/followings", User),
-            "user_likes":                 CollectionRequest[Like](self, "/users/{user_id}/likes", Like),
-            "user_related_artists":       CollectionRequest[User](self, "/users/{user_id}/relatedartists", User),
-            "user_reposts":               CollectionRequest[RepostItem](self, "/stream/users/{user_id}/reposts", RepostItem),
-            "user_stream":                CollectionRequest[StreamItem](self, "/stream/users/{user_id}", StreamItem),
-            "user_tracks":                CollectionRequest[BasicTrack](self, "/users/{user_id}/tracks", BasicTrack),
-            "user_toptracks":             CollectionRequest[BasicTrack](self, "/users/{user_id}/toptracks", BasicTrack),
-            "user_albums":                CollectionRequest[BasicAlbumPlaylist](self, "/users/{user_id}/albums", BasicAlbumPlaylist), # (can be representation=mini)
-            "user_playlists":             CollectionRequest[BasicAlbumPlaylist](self, "/users/{user_id}/playlists_without_albums", BasicAlbumPlaylist), # (can be representation=mini)
-            "user_web_profiles":          ListRequest[WebProfile](self, "/users/{user_urn}/web-profiles", WebProfile)
+            "me": Request[User]("/me", User),
+            "me_history": CollectionRequest[HistoryItem](
+                "/me/play-history/tracks", HistoryItem
+            ),
+            "me_stream": CollectionRequest[StreamItem]("/stream", StreamItem),
+            "resolve": Request[SearchItem]("/resolve", SearchItem),
+            "search": CollectionRequest[SearchItem]("/search", SearchItem),
+            "search_albums": CollectionRequest[AlbumPlaylist](
+                "/search/albums", AlbumPlaylist
+            ),  # ?filter.genre_or_tag
+            "search_playlists": CollectionRequest[AlbumPlaylist](
+                "/search/playlists_without_albums", AlbumPlaylist
+            ),
+            "search_tracks": CollectionRequest[Track](
+                "/search/tracks", Track
+            ),  # ?filter.created_at&filter.duration&filter.license
+            "search_users": CollectionRequest[User](
+                "/search/users", User
+            ),  # ?filter.place
+            "tag_recent_tracks": CollectionRequest[Track](
+                "/recent-tracks/{tag}", Track
+            ),
+            "playlist": Request[BasicAlbumPlaylist](
+                "/playlists/{playlist_id}", BasicAlbumPlaylist
+            ),
+            "playlist_likers": CollectionRequest[User](
+                "/playlists/{playlist_id}/likers", User
+            ),
+            "playlist_reposters": CollectionRequest[User](
+                "/playlists/{playlist_id}/reposters", User
+            ),
+            "track": Request[BasicTrack]("/tracks/{track_id}", BasicTrack),
+            "tracks": ListRequest[BasicTrack]("/tracks", BasicTrack),
+            "track_albums": CollectionRequest[BasicAlbumPlaylist](
+                "/tracks/{track_id}/albums", BasicAlbumPlaylist
+            ),  # (can be representation=mini)
+            "track_playlists": CollectionRequest[BasicAlbumPlaylist](
+                "/tracks/{track_id}/playlists_without_albums", BasicAlbumPlaylist
+            ),  # (can be representation=mini)
+            "track_comments": CollectionRequest[BasicComment](
+                "/tracks/{track_id}/comments", BasicComment
+            ),
+            "track_likers": CollectionRequest[User]("/tracks/{track_id}/likers", User),
+            "track_related": CollectionRequest[BasicTrack](
+                "/tracks/{track_id}/related", BasicTrack
+            ),
+            "track_reposters": CollectionRequest[User](
+                "/tracks/{track_id}/reposters", User
+            ),
+            "track_original_download": Request[OriginalDownload](
+                "/tracks/{track_id}/download", OriginalDownload
+            ),
+            "user": Request[User]("/users/{user_id}", User),
+            "user_comments": CollectionRequest[Comment](
+                "/users/{user_id}/comments", Comment
+            ),
+            "user_conversation_messages": CollectionRequest[Message](
+                "/users/{user_id}/conversations/{conversation_id}/messages", Message
+            ),
+            "user_conversations": CollectionRequest[Conversation](
+                "/users/{user_id}/conversations", Conversation
+            ),
+            "user_conversations_unread": CollectionRequest[Conversation](
+                "/users/{user_id}/conversations/unread", Conversation
+            ),
+            "user_emails": CollectionRequest[UserEmail](
+                "/users/{user_id}/emails", UserEmail
+            ),
+            "user_featured_profiles": CollectionRequest[User](
+                "/users/{user_id}/featured-profiles", User
+            ),
+            "user_followers": CollectionRequest[User](
+                "/users/{user_id}/followers", User
+            ),
+            "user_followings": CollectionRequest[User](
+                "/users/{user_id}/followings", User
+            ),
+            "user_likes": CollectionRequest[Like]("/users/{user_id}/likes", Like),
+            "user_related_artists": CollectionRequest[User](
+                "/users/{user_id}/relatedartists", User
+            ),
+            "user_reposts": CollectionRequest[RepostItem](
+                "/stream/users/{user_id}/reposts", RepostItem
+            ),
+            "user_stream": CollectionRequest[StreamItem](
+                "/stream/users/{user_id}", StreamItem
+            ),
+            "user_tracks": CollectionRequest[BasicTrack](
+                "/users/{user_id}/tracks", BasicTrack
+            ),
+            "user_toptracks": CollectionRequest[BasicTrack](
+                "/users/{user_id}/toptracks", BasicTrack
+            ),
+            "user_albums": CollectionRequest[BasicAlbumPlaylist](
+                "/users/{user_id}/albums", BasicAlbumPlaylist
+            ),  # (can be representation=mini)
+            "user_playlists": CollectionRequest[BasicAlbumPlaylist](
+                "/users/{user_id}/playlists_without_albums", BasicAlbumPlaylist
+            ),  # (can be representation=mini)
+            "user_web_profiles": ListRequest[WebProfile](
+                "/users/{user_urn}/web-profiles", WebProfile
+            ),
         }
 
-    def _set_auth_token(self, auth_token: str) -> None:
-        if auth_token is not None:
-            if auth_token.startswith("OAuth"):
-                auth_token = auth_token.split()[-1]
-            self.auth_token = auth_token
-            self._authorization = f"OAuth {auth_token}" if auth_token else None
+    @property
+    def auth_token(self) -> str:
+        return self._auth_token
+
+    @auth_token.setter
+    def auth_token(self, new_auth_token: Optional[str]) -> None:
+        if new_auth_token is not None:
+            if new_auth_token.startswith("OAuth"):
+                new_auth_token = new_auth_token.split()[-1]
+        self._authorization = f"OAuth {new_auth_token}" if new_auth_token else None
+        self._auth_token = new_auth_token
+
+    @auth_token.deleter
+    def auth_token(self):
+        self.auth_token = None
 
     def _get_default_headers(self) -> Dict[str, str]:
         return {"User-Agent": self._user_agent}
@@ -147,7 +212,7 @@ class SoundCloud:
         Checks if current client_id is valid
         """
         try:
-            self._requests["track"](track_id=1032303631, use_auth=False)
+            self._requests["track"](self, track_id=1032303631, use_auth=False)
             return True
         except HTTPError as err:
             if err.response.status_code == 401:
@@ -160,7 +225,7 @@ class SoundCloud:
         Checks if current auth_token is valid
         """
         try:
-            self._requests["me"]()
+            self._requests["me"](self)
             return True
         except HTTPError as err:
             if err.response.status_code == 401:
@@ -172,90 +237,94 @@ class SoundCloud:
         """
         Gets the user associated with client's auth token
         """
-        return self._requests["me"]()
+        return self._requests["me"](self)
 
     def get_my_history(self, **kwargs) -> Generator[HistoryItem, None, None]:
         """
         Returns the stream of recently listened tracks
         for the client's auth token
         """
-        return self._requests["me_history"](**kwargs)
+        return self._requests["me_history"](self, **kwargs)
 
     def get_my_stream(self, **kwargs) -> Generator[StreamItem, None, None]:
         """
         Returns the stream of recent uploads/reposts
         for the client's auth token
         """
-        return self._requests["me_stream"](**kwargs)
+        return self._requests["me_stream"](self, **kwargs)
 
     def resolve(self, url: str) -> Optional[SearchItem]:
         """
         Returns the resource at the given URL if it
         exists, otherwise return None
         """
-        return self._requests["resolve"](url=url)
+        return self._requests["resolve"](self, url=url)
 
     def search(self, query: str, **kwargs) -> Generator[SearchItem, None, None]:
         """
         Search for users, tracks, and playlists
         """
-        return self._requests["search"](q=query, **kwargs)
+        return self._requests["search"](self, q=query, **kwargs)
 
     def search_albums(self, query: str, **kwargs) -> Generator[AlbumPlaylist, None, None]:
         """
         Search for albums (not playlists)
         """
-        return self._requests["search_albums"](q=query, **kwargs)
+        return self._requests["search_albums"](self, q=query, **kwargs)
 
     def search_playlists(self, query: str, **kwargs) -> Generator[AlbumPlaylist, None, None]:
         """
         Search for playlists
         """
-        return self._requests["search_playlists"](q=query, **kwargs)
+        return self._requests["search_playlists"](self, q=query, **kwargs)
 
     def search_tracks(self, query: str, **kwargs) -> Generator[Track, None, None]:
         """
         Search for tracks
         """
-        return self._requests["search_tracks"](q=query, **kwargs)
+        return self._requests["search_tracks"](self, q=query, **kwargs)
 
     def search_users(self, query: str, **kwargs) -> Generator[User, None, None]:
         """
         Search for users
         """
-        return self._requests["search_users"](q=query, **kwargs)
+        return self._requests["search_users"](self, q=query, **kwargs)
 
     def get_tag_tracks_recent(self, tag: str, **kwargs) -> Generator[Track, None, None]:
         """
         Get most recent tracks for this tag
         """
-        return self._requests["tag_recent_tracks"](tag=tag, **kwargs)
+        return self._requests["tag_recent_tracks"](self, tag=tag, **kwargs)
 
     def get_playlist(self, playlist_id: int) -> Optional[BasicAlbumPlaylist]:
         """
         Returns the playlist with the given playlist_id.
         If the ID is invalid, return None
         """
-        return self._requests["playlist"](playlist_id=playlist_id)
+        return self._requests["playlist"](self, playlist_id=playlist_id)
 
     def get_playlist_likers(self, playlist_id: int, **kwargs) -> Generator[User, None, None]:
         """
         Get people who liked this playlist
         """
-        return self._requests["playlist_likers"](playlist_id=playlist_id, **kwargs)
+        return self._requests["playlist_likers"](
+            self, playlist_id=playlist_id, **kwargs
+        )
 
     def get_playlist_reposters(self, playlist_id: int, **kwargs) -> Generator[User, None, None]:
         """
         Get people who reposted this playlist
         """
-        return self._requests["playlist_reposters"](playlist_id=playlist_id, **kwargs)
+        return self._requests["playlist_reposters"](
+            self, playlist_id=playlist_id, **kwargs
+        )
 
     def get_track(self, track_id: int) -> Optional[BasicTrack]:
         """
         Returns the track with the given track_id.
         If the ID is invalid, return None
         """
-        return self._requests["track"](track_id=track_id)
+        return self._requests["track"](self, track_id=track_id)
 
     def get_tracks(self, track_ids: List[int], playlistId: int = None, playlistSecretToken: str = None, **kwargs) -> List[BasicTrack]:
         """
@@ -266,46 +335,97 @@ class SoundCloud:
             kwargs["playlistId"] = playlistId
         if playlistSecretToken:
             kwargs["playlistSecretToken"] = playlistSecretToken
-        return self._requests["tracks"](ids=",".join([str(id) for id in track_ids]), **kwargs)
+        return self._requests["tracks"](
+            self, ids=",".join([str(id) for id in track_ids]), **kwargs
+        )
 
     def get_track_albums(self, track_id: int, **kwargs) -> Generator[AlbumPlaylist, None, None]:
         """
         Get albums that this track is in
         """
-        return self._requests["track_albums"](track_id=track_id, **kwargs)
+        return self._requests["track_albums"](self, track_id=track_id, **kwargs)
 
     def get_track_playlists(self, track_id: int, **kwargs) -> Generator[AlbumPlaylist, None, None]:
         """
         Get playlists that this track is in
         """
-        return self._requests["track_playlists"](track_id=track_id, **kwargs)
+        return self._requests["track_playlists"](self, track_id=track_id, **kwargs)
 
-    def get_track_comments(self, track_id: int, threaded: int = 0, filter_replies: int = 1, **kwargs) -> Generator[BasicComment, None, None]:
+    def get_track_comments(
+        self, track_id: int, threaded: int = 0, **kwargs
+    ) -> Generator[BasicComment, None, None]:
         """
         Get comments on this track
         """
-        return self._requests["track_comments"](track_id=track_id, 
-                                               threaded=threaded,
-                                               filter_replies=filter_replies,
-                                               **kwargs)
+        return self._requests["track_comments"](
+            self, track_id=track_id, threaded=threaded, **kwargs
+        )
+
+    def get_track_comments_with_interactions(
+        self, track_id: int, threaded: int = 0, **kwargs
+    ) -> Generator[CommentWithInteractions, None, None]:
+        """
+        Get comments on this track with interaction data. Requires authentication.
+        """
+        track = self.get_track(track_id)
+        track_urn = track.urn
+        creator_urn = track.user.urn
+        comments = self.get_track_comments(track_id, threaded, **kwargs)
+        while True:
+            chunk = list(itertools.islice(comments, 10))
+            if not chunk:
+                return
+            comment_urns = [comment.self.urn for comment in chunk]
+            result = UserInteractionsRequest(
+                self,
+                UserInteractionsQueryParams(
+                    creator_urn,
+                    "sc:interactiontype:reaction",
+                    track_urn,
+                    comment_urns,
+                ),
+            )
+            comments_with_interactions = []
+            for comment, user_interactions, creator_interactions in zip(
+                chunk, result.user, result.creator
+            ):
+                likes = list(
+                    filter(
+                        lambda x: x.interactionTypeValueUrn
+                        == "sc:interactiontypevalue:like",
+                        user_interactions.interactionCounts,
+                    )
+                )
+                num_likes = likes[0].count if likes else 0
+                comments_with_interactions.append(
+                    CommentWithInteractions(
+                        comment=comment,
+                        likes=num_likes,
+                        liked_by_creator=creator_interactions.userInteraction
+                        == "sc:interactiontypevalue:like",
+                        liked_by_user=user_interactions.userInteraction
+                        == "sc:interactiontypevalue:like",
+                    )
+                )
+            yield from comments_with_interactions
 
     def get_track_likers(self, track_id: int, **kwargs) -> Generator[User, None, None]:
         """
         Get users who liked this track
         """
-        return self._requests["track_likers"](track_id=track_id, **kwargs)
+        return self._requests["track_likers"](self, track_id=track_id, **kwargs)
 
     def get_track_related(self, track_id: int, **kwargs) -> Generator[BasicTrack, None, None]:
         """
         Get related tracks
         """
-        return self._requests["track_related"](track_id=track_id, **kwargs)
+        return self._requests["track_related"](self, track_id=track_id, **kwargs)
 
     def get_track_reposters(self, track_id: int, **kwargs) -> Generator[User, None, None]:
         """
         Get users who reposted this track
         """
-        return self._requests["track_reposters"](track_id=track_id, **kwargs)
+        return self._requests["track_reposters"](self, track_id=track_id, **kwargs)
 
     def get_track_original_download(self, track_id: int, token: str = None) -> Optional[str]:
         """
@@ -314,9 +434,13 @@ class SoundCloud:
         Requires authentication.
         """
         if token:
-            download = self._requests["track_original_download"](track_id=track_id, secret_token=token)
+            download = self._requests["track_original_download"](
+                self, track_id=track_id, secret_token=token
+            )
         else:
-            download = self._requests["track_original_download"](track_id=track_id)
+            download = self._requests["track_original_download"](
+                self, track_id=track_id
+            )
         if download is None:
             return None
         else:
@@ -327,7 +451,7 @@ class SoundCloud:
         Returns the user with the given user_id.
         If the ID is invalid, return None
         """
-        return self._requests["user"](user_id=user_id)
+        return self._requests["user"](self, user_id=user_id)
 
     def get_user_by_username(self, username: str) -> Optional[User]:
         """
@@ -344,211 +468,108 @@ class SoundCloud:
         """
         Get comments by this user
         """
-        return self._requests["user_comments"](user_id=user_id, **kwargs)
+        return self._requests["user_comments"](self, user_id=user_id, **kwargs)
 
     def get_conversation_messages(self, user_id: int, conversation_id: int, **kwargs) -> Generator[Message, None, None]:
         """
         Get messages in this conversation
         """
-        return self._requests["user_conversation_messages"](user_id=user_id,
-                                                           conversation_id=conversation_id,
-                                                           **kwargs)
+        return self._requests["user_conversation_messages"](
+            self, user_id=user_id, conversation_id=conversation_id, **kwargs
+        )
 
     def get_conversations(self, user_id: int, **kwargs) -> Generator[Conversation, None, None]:
         """
         Get conversations including this user
         """
-        return self._requests["user_conversations"](user_id=user_id, **kwargs)
+        return self._requests["user_conversations"](self, user_id=user_id, **kwargs)
 
     def get_unread_conversations(self, user_id: int, **kwargs) -> Generator[Conversation, None, None]:
         """
         Get conversations unread by this user
         """
-        return self._requests["user_conversations_unread"](user_id=user_id, **kwargs)
+        return self._requests["user_conversations_unread"](
+            self, user_id=user_id, **kwargs
+        )
 
     def get_user_emails(self, user_id: int, **kwargs) -> Generator[UserEmail, None, None]:
         """
         Get user's email addresses. Requires authentication.
         """
-        return self._requests["user_emails"](user_id=user_id, **kwargs)
+        return self._requests["user_emails"](self, user_id=user_id, **kwargs)
 
     def get_user_featured_profiles(self, user_id: int, **kwargs) -> Generator[User, None, None]:
         """
         Get profiles featured by this user
         """
-        return self._requests["user_featured_profiles"](user_id=user_id, **kwargs)
+        return self._requests["user_featured_profiles"](self, user_id=user_id, **kwargs)
 
     def get_user_followers(self, user_id: int, **kwargs) -> Generator[User, None, None]:
         """
         Get user's followers
         """
-        return self._requests["user_followers"](user_id=user_id, **kwargs)
+        return self._requests["user_followers"](self, user_id=user_id, **kwargs)
 
     def get_user_following(self, user_id: int, **kwargs) -> Generator[User, None, None]:
         """
         Get users this user is following
         """
-        return self._requests["user_followings"](user_id=user_id, **kwargs)
+        return self._requests["user_followings"](self, user_id=user_id, **kwargs)
 
     def get_user_likes(self, user_id: int, **kwargs) -> Generator[Like, None, None]:
         """
         Get likes by this user
         """
-        return self._requests["user_likes"](user_id=user_id, **kwargs)
+        return self._requests["user_likes"](self, user_id=user_id, **kwargs)
 
     def get_user_related_artists(self, user_id: int, **kwargs) -> Generator[User, None, None]:
         """
         Get artists related to this user
         """
-        return self._requests["user_related_artists"](user_id=user_id, **kwargs)
+        return self._requests["user_related_artists"](self, user_id=user_id, **kwargs)
 
     def get_user_reposts(self, user_id: int, **kwargs) -> Generator[RepostItem, None, None]:
         """
         Get reposts by this user
         """
-        return self._requests["user_reposts"](user_id=user_id, **kwargs)
+        return self._requests["user_reposts"](self, user_id=user_id, **kwargs)
 
     def get_user_stream(self, user_id: int, **kwargs) -> Generator[StreamItem, None, None]:
         """
         Returns generator of track uploaded by given user and
         reposts by this user
         """
-        return self._requests["user_stream"](user_id=user_id, **kwargs)
+        return self._requests["user_stream"](self, user_id=user_id, **kwargs)
 
     def get_user_tracks(self, user_id: int, **kwargs) -> Generator[BasicTrack, None, None]:
         """
         Get tracks uploaded by this user
         """
-        return self._requests["user_tracks"](user_id=user_id, **kwargs)
+        return self._requests["user_tracks"](self, user_id=user_id, **kwargs)
 
     def get_user_popular_tracks(self, user_id: int, **kwargs) -> Generator[BasicTrack, None, None]:
         """
         Get popular tracks uploaded by this user
         """
-        return self._requests["user_toptracks"](user_id=user_id, **kwargs)
+        return self._requests["user_toptracks"](self, user_id=user_id, **kwargs)
 
     def get_user_albums(self, user_id: int, **kwargs) -> Generator[BasicAlbumPlaylist, None, None]:
         """
         Get albums uploaded by this user
         """
-        return self._requests["user_albums"](user_id=user_id, **kwargs)
+        return self._requests["user_albums"](self, user_id=user_id, **kwargs)
 
     def get_user_playlists(self, user_id: int, **kwargs) -> Generator[BasicAlbumPlaylist, None, None]:
         """
         Get playlists uploaded by this user
         """
-        return self._requests["user_playlists"](user_id=user_id, **kwargs)
+        return self._requests["user_playlists"](self, user_id=user_id, **kwargs)
 
     def get_user_links(self, user_urn: str, **kwargs) -> List[WebProfile]:
         """
         Get links in this user's description
         """
-        return self._requests["user_web_profiles"](user_urn=user_urn, **kwargs)
+        return self._requests["user_web_profiles"](self, user_urn=user_urn, **kwargs)
 
-
-@dataclass
-class Request(Generic[T]):
-
-    base = "https://api-v2.soundcloud.com"
-    client: SoundCloud
-    format_url: str
-    return_type: T
-
-    def format_url_and_remove_params(self, kwargs):
-        format_args = {tup[1] for tup in string.Formatter().parse(self.format_url) if tup[1] is not None}
-        args = {}
-        for k in list(kwargs.keys()):
-            if k in format_args:
-                args[k] = kwargs.pop(k)     
-        return self.base + self.format_url.format(**args)
-
-    def convert_dict(self, d):
-        union = get_origin(self.return_type) is Union
-        if union:
-            for t in get_args(self.return_type):
-                try:
-                    return t.from_dict(d)
-                except:
-                    pass
-        else:
-            return self.return_type.from_dict(d)
-        raise ValueError(f"Could not convert {d} to type {self.return_type}")
-
-    def __call__(self, use_auth=True, **kwargs) -> Optional[T]:
-        """
-        Requests the resource at the given url with
-        parameters given by kwargs. Converts the resource
-        to type T and returns it. If the
-        resource does not exist, returns None
-        """
-        resource_url = self.format_url_and_remove_params(kwargs)
-        params = kwargs
-        params["client_id"] = self.client.client_id
-        headers = self.client._get_default_headers()
-        if use_auth and self.client._authorization is not None:
-            headers["Authorization"] = self.client._authorization
-        with requests.get(resource_url, params=params, headers=headers) as r:
-            if r.status_code in (400, 404, 500):
-                return None
-            r.raise_for_status()
-            return self.convert_dict(r.json())
-
-
-@dataclass
-class CollectionRequest(Request, Generic[T]):
-
-    def __call__(self, use_auth=True, offset: str = None, limit: int = None, **kwargs) -> Generator[T, None, None]:
-        """
-        Yields resources from the given url with
-        parameters given by kwargs. Converts the resources
-        to type T before yielding
-        """
-        resource_url = self.format_url_and_remove_params(kwargs)
-        params = kwargs
-        params["client_id"] = self.client.client_id
-        if offset:
-            params["offset"] = offset
-        if limit:
-            params["limit"] = limit
-        headers = self.client._get_default_headers()
-        if use_auth and self.client._authorization is not None:
-            headers["Authorization"] = self.client._authorization
-        while resource_url:
-            with requests.get(resource_url, params=params, headers=headers) as r:
-                if r.status_code in (400, 404, 500):
-                    return
-                r.raise_for_status()
-                data = r.json()
-                for resource in data["collection"]:
-                    yield self.convert_dict(resource)
-                resource_url = data.get("next_href", None)
-                parsed = urlparse(resource_url)
-                params = parse_qs(parsed.query)
-                params["client_id"] = self.client.client_id # next_href doesn't contain client_id
-                resource_url = urljoin(resource_url, parsed.path)
-
-
-@dataclass
-class ListRequest(Request, Generic[T]):
-    """
-    Requests the resource list at the given url with
-    parameters given by kwargs. Converts the resources
-    to type T and returns them.
-    """
-    def __call__(self, use_auth=True, **kwargs) -> List[T]:
-        resource_url = self.format_url_and_remove_params(kwargs)
-        params = kwargs
-        params["client_id"] = self.client.client_id
-        headers = self.client._get_default_headers()
-        if use_auth and self.client._authorization is not None:
-            headers["Authorization"] = self.client._authorization
-        resources = []
-        with requests.get(resource_url, params=params, headers=headers) as r:
-            if r.status_code in (400, 404, 500):
-                return []
-            r.raise_for_status()
-            for resource in r.json():
-                resources.append(self.convert_dict(resource))
-        return resources
 
 __all__ = ["SoundCloud"]
