@@ -63,6 +63,6 @@ from soundcloud.resource import __all__ as res_all
 from soundcloud.soundcloud import *
 from soundcloud.soundcloud import __all__ as sc_all
 
-__version__ = "1.4.0"
+__version__ = "1.4.1"
 
 __all__ = sc_all + ex_all + res_all

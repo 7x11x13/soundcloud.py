@@ -28,6 +28,7 @@ jobs:
         coverage run --source=soundcloud -m pytest
         coveralls --service=github
   publish:
+    needs: test
     environment: test
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
