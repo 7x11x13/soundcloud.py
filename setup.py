@@ -17,7 +17,12 @@ setup(
     author_email="x7x11x13@gmail.com",
     url="https://github.com/7x11x13/soundcloud.py",
     packages=["soundcloud", "soundcloud.resource"],
-    install_requires=["dacite", "python-dateutil>=2.8.2", "requests"],
+    install_requires=[
+        "dacite",
+        "python-dateutil>=2.8.2",
+        "requests",
+        "typing-extensions; python_version < '3.8'",
+    ],
     extras_require={"test": ["coveralls", "pytest", "pytest-dotenv"], "docs": ["pdoc"]},
     classifiers=[
         "Programming Language :: Python :: 3.7",
