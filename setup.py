@@ -21,7 +21,6 @@ setup(
         "dacite",
         "python-dateutil>=2.8.2",
         "requests",
-        "typing-extensions; python_version < '3.8'",
     ],
     extras_require={"test": ["coveralls", "pytest", "pytest-dotenv"], "docs": ["pdoc"]},
     classifiers=[

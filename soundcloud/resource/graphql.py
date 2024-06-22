@@ -1,15 +1,10 @@
 from dataclasses import dataclass
 from typing import List, Optional
 
-try:
-    from typing import Literal
-except ImportError:
-    from typing_extensions import Literal
-
 from soundcloud.resource.base import BaseData
 from soundcloud.resource.comment import BasicComment
 
-InteractionTypeValue = Literal["sc:interactiontypevalue:like"]
+InteractionTypeValue = str
 
 
 @dataclass
@@ -23,7 +18,7 @@ class UserInteraction(BaseData):
     targetUrn: Optional[str]
     userInteraction: Optional[InteractionTypeValue]
     interactionCounts: Optional[List[InteractionCount]]
-    interactionTypeUrn: Optional[Literal["sc:interactiontype:reaction"]]
+    interactionTypeUrn: Optional[str]
 
 
 @dataclass
