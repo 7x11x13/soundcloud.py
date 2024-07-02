@@ -9,6 +9,7 @@ from soundcloud.resource.user import BasicUser, MissingUser
 @dataclass
 class Message(BaseData):
     """Single DM between two users"""
+
     content: str
     conversation_id: str
     sender: Union[BasicUser, MissingUser]

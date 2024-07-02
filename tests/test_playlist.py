@@ -3,7 +3,11 @@ from soundcloud import BasicAlbumPlaylist, SoundCloud
 
 def test_get_playlist(client: SoundCloud):
     playlist = client.get_playlist(1326192094)
-    assert isinstance(playlist, BasicAlbumPlaylist) and playlist.user.username == "7x11x13-testing"
+    assert (
+        isinstance(playlist, BasicAlbumPlaylist)
+        and playlist.user.username == "7x11x13-testing"
+    )
+
 
 def test_playlist_likers(client: SoundCloud):
     likers = client.get_playlist_likers(1326192094)
@@ -13,6 +17,7 @@ def test_playlist_likers(client: SoundCloud):
             found = True
             break
     assert found
+
 
 def test_playlist_reposters(client: SoundCloud):
     reposters = client.get_playlist_reposters(1326720835)

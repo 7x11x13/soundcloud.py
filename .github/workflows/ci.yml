@@ -18,7 +18,13 @@ jobs:
         python-version: 3.7
     - name: Install dependencies
       run: |
-        pip install -e .[test]
+        pip install -e .[dev]
+    - name: Lint
+      run: ruff check
+    - name: Format check
+      run: ruff format --check
+    - name: Type check
+      run: mypy .
     - name: Coveralls
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -40,7 +46,7 @@ jobs:
         python-version: 3.7
     - name: Install dependencies
       run: |
-        pip install -e .[test]
+        pip install -e .[dev]
     - name: Build package
       run: |
         pip install --upgrade build

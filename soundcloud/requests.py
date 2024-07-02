@@ -2,6 +2,9 @@ import string
 from dataclasses import asdict, dataclass
 from typing import (
     TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Dict,
     Generator,
     Generic,
     List,
@@ -13,36 +16,64 @@ from typing import (
 
 import requests
 
+from soundcloud.resource.aliases import Like, RepostItem, SearchItem, StreamItem
 from soundcloud.resource.base import BaseData
+from soundcloud.resource.comment import BasicComment, Comment
+from soundcloud.resource.conversation import Conversation
+from soundcloud.resource.download import OriginalDownload
 from soundcloud.resource.graphql import UserInteraction
+from soundcloud.resource.history import HistoryItem
+from soundcloud.resource.message import Message
+from soundcloud.resource.playlist import AlbumPlaylist, BasicAlbumPlaylist
+from soundcloud.resource.track import BasicTrack, Track
+from soundcloud.resource.user import User, UserEmail
+from soundcloud.resource.web_profile import WebProfile
 
 if TYPE_CHECKING:
     from soundcloud.soundcloud import SoundCloud
 
 try:
+    from typing import Protocol
+except ImportError:
+    from typing_extensions import Protocol  # type: ignore[assignment]
+
+try:
     from typing import get_args, get_origin
 except ImportError:
-    # get_args and get_origin shim for version < 3.8
-    def get_args(tp):
+    # get_args and get_origin for version < 3.8
+    def get_args(tp):  # type: ignore[misc]
         return getattr(tp, "__args__", ())
 
-    def get_origin(tp):
+    def get_origin(tp):  # type: ignore[no-redef]
         return getattr(tp, "__origin__", None)
 
 
 from urllib.parse import parse_qs, urljoin, urlparse
+
+
+def _convert_dict(d, return_type: Type[BaseData]):
+    union = get_origin(return_type) is Union
+    if union:
+        for t in get_args(return_type):
+            try:
+                return t.from_dict(d)
+            except Exception:
+                pass
+    else:
+        return return_type.from_dict(d)
+    raise ValueError(f"Could not convert {d} to type {return_type}")
+
 
 T = TypeVar("T", bound=BaseData)
 
 
 @dataclass
 class Request(Generic[T]):
-
     base = "https://api-v2.soundcloud.com"
     format_url: str
-    return_type: T
+    return_type: Type[T]
 
-    def _format_url_and_remove_params(self, kwargs):
+    def _format_url_and_remove_params(self, kwargs: dict) -> str:
         format_args = {
             tup[1]
             for tup in string.Formatter().parse(self.format_url)
@@ -54,19 +85,9 @@ class Request(Generic[T]):
                 args[k] = kwargs.pop(k)
         return self.base + self.format_url.format(**args)
 
-    def _convert_dict(self, d):
-        union = get_origin(self.return_type) is Union
-        if union:
-            for t in get_args(self.return_type):
-                try:
-                    return t.from_dict(d)
-                except:
-                    pass
-        else:
-            return self.return_type.from_dict(d)
-        raise ValueError(f"Could not convert {d} to type {self.return_type}")
-
-    def __call__(self, client: "SoundCloud", use_auth=True, **kwargs) -> Optional[T]:
+    def __call__(
+        self, client: "SoundCloud", use_auth: bool = True, **kwargs
+    ) -> Optional[T]:
         """
         Requests the resource at the given url with
         parameters given by kwargs. Converts the resource
@@ -83,18 +104,17 @@ class Request(Generic[T]):
             if r.status_code in (400, 404, 500):
                 return None
             r.raise_for_status()
-            return self._convert_dict(r.json())
+            return _convert_dict(r.json(), self.return_type)
 
 
 @dataclass
 class CollectionRequest(Request, Generic[T]):
-
     def __call__(
         self,
         client: "SoundCloud",
-        use_auth=True,
-        offset: str = None,
-        limit: int = None,
+        use_auth: bool = True,
+        offset: Optional[str] = None,
+        limit: Optional[int] = None,
         **kwargs,
     ) -> Generator[T, None, None]:
         """
@@ -105,9 +125,9 @@ class CollectionRequest(Request, Generic[T]):
         resource_url = self._format_url_and_remove_params(kwargs)
         params = kwargs
         params["client_id"] = client.client_id
-        if offset:
+        if offset is not None:
             params["offset"] = offset
-        if limit:
+        if limit is not None:
             params["limit"] = limit
         headers = client._get_default_headers()
         if use_auth and client._authorization is not None:
@@ -119,13 +139,13 @@ class CollectionRequest(Request, Generic[T]):
                 r.raise_for_status()
                 data = r.json()
                 for resource in data["collection"]:
-                    yield self._convert_dict(resource)
+                    yield _convert_dict(resource, self.return_type)
                 resource_url = data.get("next_href", None)
                 parsed = urlparse(resource_url)
                 params = parse_qs(parsed.query)
-                params["client_id"] = (
+                params["client_id"] = [
                     client.client_id
-                )  # next_href doesn't contain client_id
+                ]  # next_href doesn't contain client_id
                 resource_url = urljoin(resource_url, parsed.path)
 
 
@@ -150,24 +170,30 @@ class ListRequest(Request, Generic[T]):
                 return []
             r.raise_for_status()
             for resource in r.json():
-                resources.append(self._convert_dict(resource))
+                resources.append(_convert_dict(resource, self.return_type))
         return resources
 
 
-# GraphQL requests
+class DataclassInstance(Protocol):
+    __dataclass_fields__: ClassVar[Dict[str, Any]]
 
-Q = TypeVar("Q")
+
+Q = TypeVar("Q", bound=DataclassInstance)
 
 
 @dataclass
-class GraphQLRequest(Request, Generic[Q, T]):
+class GraphQLRequest(Generic[Q, T]):
     base = "https://graph.soundcloud.com/graphql"
     operation_name: str
-    query_arg_type: Q
+    query_arg_type: Type[Q]
+    return_type: Type[T]
     query_template_str: str
 
     def __call__(
-        self, client: "SoundCloud", query_params: Q, use_auth=True
+        self,
+        client: "SoundCloud",
+        query_args: Q,
+        use_auth=True,
     ) -> Optional[T]:
         params = {}
         params["client_id"] = client.client_id
@@ -179,14 +205,121 @@ class GraphQLRequest(Request, Generic[Q, T]):
         data = {
             "operationName": self.operation_name,
             "query": self.query_template_str,
-            "variables": asdict(query_params),
+            "variables": asdict(query_args),
         }
 
         with requests.post(self.base, json=data, params=params, headers=headers) as r:
             if r.status_code in (400, 404, 500):
                 return None
             r.raise_for_status()
-            return self._convert_dict(r.json()["data"])
+            return _convert_dict(r.json()["data"], self.return_type)
+
+
+"""
+v2 endpoints
+"""
+
+
+MeRequest = Request[User]("/me", User)
+MeHistoryRequest = CollectionRequest[HistoryItem](
+    "/me/play-history/tracks", HistoryItem
+)
+MeStreamRequest = CollectionRequest[StreamItem](
+    "/stream",
+    StreamItem,  # type: ignore[arg-type]
+)
+ResolveRequest = Request[SearchItem]("/resolve", SearchItem)  # type: ignore[arg-type]
+SearchRequest = CollectionRequest[SearchItem](
+    "/search",
+    SearchItem,  # type: ignore[arg-type]
+)
+SearchAlbumsRequest = CollectionRequest[AlbumPlaylist](
+    "/search/albums", AlbumPlaylist
+)  # ?filter.genre_or_tag
+SearchPlaylistsRequest = CollectionRequest[AlbumPlaylist](
+    "/search/playlists_without_albums", AlbumPlaylist
+)
+SearchTracksRequest = CollectionRequest[Track](
+    "/search/tracks", Track
+)  # ?filter.created_at&filter.duration&filter.license
+SearchUsersRequest = CollectionRequest[User]("/search/users", User)  # ?filter.place
+TagRecentTracksRequest = CollectionRequest[Track]("/recent-tracks/{tag}", Track)
+PlaylistRequest = Request[BasicAlbumPlaylist](
+    "/playlists/{playlist_id}", BasicAlbumPlaylist
+)
+PlaylistLikersRequest = CollectionRequest[User]("/playlists/{playlist_id}/likers", User)
+PlaylistRepostersRequest = CollectionRequest[User](
+    "/playlists/{playlist_id}/reposters", User
+)
+TrackRequest = Request[BasicTrack]("/tracks/{track_id}", BasicTrack)
+TracksRequest = ListRequest[BasicTrack]("/tracks", BasicTrack)
+TrackAlbumsRequest = CollectionRequest[BasicAlbumPlaylist](
+    "/tracks/{track_id}/albums", BasicAlbumPlaylist
+)  # (can be representation=mini)
+TrackPlaylistsRequest = CollectionRequest[BasicAlbumPlaylist](
+    "/tracks/{track_id}/playlists_without_albums", BasicAlbumPlaylist
+)  # (can be representation=mini)
+TrackCommentsRequest = CollectionRequest[BasicComment](
+    "/tracks/{track_id}/comments", BasicComment
+)
+TrackLikersRequest = CollectionRequest[User]("/tracks/{track_id}/likers", User)
+TrackRelatedRequest = CollectionRequest[BasicTrack](
+    "/tracks/{track_id}/related", BasicTrack
+)
+TrackRepostersRequest = CollectionRequest[User]("/tracks/{track_id}/reposters", User)
+TrackOriginalDownloadRequest = Request[OriginalDownload](
+    "/tracks/{track_id}/download", OriginalDownload
+)
+UserRequest = Request[User]("/users/{user_id}", User)
+UserCommentsRequest = CollectionRequest[Comment]("/users/{user_id}/comments", Comment)
+UserConversationMessagesRequest = CollectionRequest[Message](
+    "/users/{user_id}/conversations/{conversation_id}/messages", Message
+)
+UserConversationsRequest = CollectionRequest[Conversation](
+    "/users/{user_id}/conversations", Conversation
+)
+UserConversationsUnreadRequest = CollectionRequest[Conversation](
+    "/users/{user_id}/conversations/unread", Conversation
+)
+UserEmailsRequest = CollectionRequest[UserEmail]("/users/{user_id}/emails", UserEmail)
+UserFeaturedProfilesRequest = CollectionRequest[User](
+    "/users/{user_id}/featured-profiles", User
+)
+UserFollowersRequest = CollectionRequest[User]("/users/{user_id}/followers", User)
+UserFollowingsRequest = CollectionRequest[User]("/users/{user_id}/followings", User)
+UserLikesRequest = CollectionRequest[Like](
+    "/users/{user_id}/likes",
+    Like,  # type: ignore[arg-type]
+)
+UserRelatedArtistsRequest = CollectionRequest[User](
+    "/users/{user_id}/relatedartists", User
+)
+UserRepostsRequest = CollectionRequest[RepostItem](
+    "/stream/users/{user_id}/reposts",
+    RepostItem,  # type: ignore[arg-type]
+)
+UserStreamRequest = CollectionRequest[StreamItem](
+    "/stream/users/{user_id}",
+    StreamItem,  # type: ignore[arg-type]
+)
+UserTracksRequest = CollectionRequest[BasicTrack]("/users/{user_id}/tracks", BasicTrack)
+UserToptracksRequest = CollectionRequest[BasicTrack](
+    "/users/{user_id}/toptracks", BasicTrack
+)
+UserAlbumsRequest = CollectionRequest[BasicAlbumPlaylist](
+    "/users/{user_id}/albums", BasicAlbumPlaylist
+)  # (can be representation=mini)
+UserPlaylistsRequest = CollectionRequest[BasicAlbumPlaylist](
+    "/users/{user_id}/playlists_without_albums", BasicAlbumPlaylist
+)  # (can be representation=mini)
+UserWebProfilesRequest = ListRequest[WebProfile](
+    "/users/{user_urn}/web-profiles", WebProfile
+)
+
+
+"""
+graphql endpoints
+"""
 
 
 @dataclass
@@ -206,10 +339,9 @@ class UserInteractionsQueryParams:
 UserInteractionsRequest = GraphQLRequest[
     UserInteractionsQueryParams, UserInteractionsQueryResult
 ](
-    "",
-    UserInteractionsQueryResult,
     "UserInteractions",
     UserInteractionsQueryParams,
+    UserInteractionsQueryResult,
     (
         "query UserInteractions(\n"
         "   $parentUrn: String!\n"

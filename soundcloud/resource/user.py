@@ -10,20 +10,25 @@ from soundcloud.resource.visuals import Visuals
 class Product(BaseData):
     id: str
 
+
 @dataclass
 class CreatorSubscription(BaseData):
     product: Product
 
+
 @dataclass
 class Badges(BaseData):
     """User badges"""
+
     pro: bool
     pro_unlimited: bool
     verified: bool
 
+
 @dataclass
 class BasicUser(BaseData):
     """User with partial information"""
+
     avatar_url: str
     first_name: str
     followers_count: int
@@ -44,9 +49,11 @@ class BasicUser(BaseData):
     station_urn: str
     station_permalink: str
 
+
 @dataclass
 class User(BasicUser):
     """User with full information"""
+
     comments_count: int
     created_at: datetime.datetime
     creator_subscriptions: List[CreatorSubscription]
@@ -61,20 +68,25 @@ class User(BasicUser):
     track_count: int
     visuals: Optional[Visuals]
 
+
 @dataclass
 class MissingUser(BaseData):
     """Deleted user"""
+
     id: int
     kind: str
+
 
 @dataclass
 class UserStatus(BaseData):
     status: str
     timestamp: str
 
+
 @dataclass
 class UserEmail(BaseData):
     """Email address associated with a user"""
+
     address: str
     confirmed: bool
     id: int

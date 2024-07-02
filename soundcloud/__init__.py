@@ -1,3 +1,4 @@
+# ruff: noqa
 """
 # soundcloud.py
 

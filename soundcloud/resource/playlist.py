@@ -17,19 +17,25 @@ class BaseAlbumPlaylist(BaseItem):
     track_count: int
     tracks: List[Union[BasicTrack, MiniTrack]]
 
+
 @dataclass
 class AlbumPlaylist(BaseAlbumPlaylist):
     """Playlist or album with full user info"""
+
     user: User
+
 
 @dataclass
 class BasicAlbumPlaylist(BaseAlbumPlaylist):
     """Playlist or album with partial user info"""
+
     user: BasicUser
+
 
 @dataclass
 class AlbumPlaylistNoTracks(BaseData):
     """Playlist or album with no track info"""
+
     artwork_url: Optional[str]
     created_at: datetime.datetime
     duration: int
