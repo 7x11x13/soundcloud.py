@@ -38,7 +38,7 @@ except ImportError:
     from typing_extensions import Protocol  # type: ignore[assignment]
 
 try:
-    from typing import get_args, get_origin
+    from typing import get_args, get_origin  # type: ignore[attr-defined]
 except ImportError:
     # get_args and get_origin for version < 3.8
     def get_args(tp):  # type: ignore[misc]
