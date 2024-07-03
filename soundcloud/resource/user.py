@@ -1,22 +1,22 @@
 import datetime
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Optional, Tuple
 
 from soundcloud.resource.base import BaseData
 from soundcloud.resource.visuals import Visuals
 
 
-@dataclass
+@dataclass(frozen=True)
 class Product(BaseData):
     id: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class CreatorSubscription(BaseData):
     product: Product
 
 
-@dataclass
+@dataclass(frozen=True)
 class Badges(BaseData):
     """User badges"""
 
@@ -25,7 +25,7 @@ class Badges(BaseData):
     verified: bool
 
 
-@dataclass
+@dataclass(frozen=True)
 class BasicUser(BaseData):
     """User with partial information"""
 
@@ -50,13 +50,13 @@ class BasicUser(BaseData):
     station_permalink: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class User(BasicUser):
     """User with full information"""
 
     comments_count: int
     created_at: datetime.datetime
-    creator_subscriptions: List[CreatorSubscription]
+    creator_subscriptions: Tuple[CreatorSubscription, ...]
     creator_subscription: CreatorSubscription
     description: Optional[str]
     followings_count: int
@@ -69,7 +69,7 @@ class User(BasicUser):
     visuals: Optional[Visuals]
 
 
-@dataclass
+@dataclass(frozen=True)
 class MissingUser(BaseData):
     """Deleted user"""
 
@@ -77,13 +77,13 @@ class MissingUser(BaseData):
     kind: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class UserStatus(BaseData):
     status: str
     timestamp: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class UserEmail(BaseData):
     """Email address associated with a user"""
 

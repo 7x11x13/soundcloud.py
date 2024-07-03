@@ -1,6 +1,6 @@
 import datetime
 from dataclasses import dataclass
-from typing import List, Optional, Union
+from typing import Optional, Tuple, Union
 
 from soundcloud.resource.base import BaseData
 from soundcloud.resource.base_item import BaseItem
@@ -8,31 +8,31 @@ from soundcloud.resource.track import BasicTrack, MiniTrack
 from soundcloud.resource.user import BasicUser, User
 
 
-@dataclass
+@dataclass(frozen=True)
 class BaseAlbumPlaylist(BaseItem):
     managed_by_feeds: bool
     set_type: str
     is_album: bool
     published_at: Optional[datetime.datetime]
     track_count: int
-    tracks: List[Union[BasicTrack, MiniTrack]]
+    tracks: Tuple[Union[BasicTrack, MiniTrack], ...]
 
 
-@dataclass
+@dataclass(frozen=True)
 class AlbumPlaylist(BaseAlbumPlaylist):
     """Playlist or album with full user info"""
 
     user: User
 
 
-@dataclass
+@dataclass(frozen=True)
 class BasicAlbumPlaylist(BaseAlbumPlaylist):
     """Playlist or album with partial user info"""
 
     user: BasicUser
 
 
-@dataclass
+@dataclass(frozen=True)
 class AlbumPlaylistNoTracks(BaseData):
     """Playlist or album with no track info"""
 

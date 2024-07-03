@@ -4,7 +4,7 @@ from typing import Optional
 from soundcloud.resource.base import BaseData
 
 
-@dataclass
+@dataclass(frozen=True)
 class WebProfile(BaseData):
     url: str
     network: str

@@ -1,13 +1,13 @@
 import datetime
 from dataclasses import dataclass
-from typing import List, Union
+from typing import Tuple, Union
 
 from soundcloud.resource.base import BaseData
 from soundcloud.resource.message import Message
 from soundcloud.resource.user import BasicUser, MissingUser
 
 
-@dataclass
+@dataclass(frozen=True)
 class Conversation(BaseData):
     """DM conversation between two users"""
 
@@ -16,4 +16,4 @@ class Conversation(BaseData):
     read: bool
     started_at: datetime.datetime
     summary: str
-    users: List[Union[BasicUser, MissingUser]]
+    users: Tuple[Union[BasicUser, MissingUser], ...]

@@ -6,12 +6,12 @@ from soundcloud.resource.track import CommentTrack
 from soundcloud.resource.user import BasicUser
 
 
-@dataclass
+@dataclass(frozen=True)
 class CommentSelf(BaseData):
     urn: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class BasicComment(BaseData):
     """Comment without a specified track"""
 
@@ -26,7 +26,7 @@ class BasicComment(BaseData):
     user: BasicUser
 
 
-@dataclass
+@dataclass(frozen=True)
 class Comment(BasicComment):
     """Comment with a specified track"""
 

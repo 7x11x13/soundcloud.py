@@ -10,7 +10,7 @@ def readme():
 
 setup(
     name="soundcloud-v2",
-    version="1.4.2",
+    version="1.5.0",
     description=(
         "Python wrapper for the internal v2 SoundCloud API."
         "Does not require an API key."
@@ -23,7 +23,7 @@ setup(
     packages=["soundcloud", "soundcloud.resource"],
     package_data={"soundcloud": ["py.typed"]},
     install_requires=[
-        "dacite",
+        "dacite>=1.8.1",
         "python-dateutil>=2.8.2",
         "requests",
         "typing_extensions; python_version<'3.8'",

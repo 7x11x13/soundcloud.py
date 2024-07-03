@@ -5,9 +5,11 @@ import dateutil.parser
 from dacite import Config, from_dict
 
 
-@dataclass
+@dataclass(frozen=True)
 class BaseData:
-    dacite_config = Config(type_hooks={datetime.datetime: dateutil.parser.isoparse})
+    dacite_config = Config(
+        type_hooks={datetime.datetime: dateutil.parser.isoparse}, cast=[tuple]
+    )
 
     @classmethod
     def from_dict(cls, d: dict):

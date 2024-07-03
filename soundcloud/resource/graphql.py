@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Optional, Tuple
 
 from soundcloud.resource.base import BaseData
 from soundcloud.resource.comment import BasicComment
@@ -7,21 +7,21 @@ from soundcloud.resource.comment import BasicComment
 InteractionTypeValue = str
 
 
-@dataclass
+@dataclass(frozen=True)
 class InteractionCount(BaseData):
     count: Optional[int]
     interactionTypeValueUrn: Optional[InteractionTypeValue]
 
 
-@dataclass
+@dataclass(frozen=True)
 class UserInteraction(BaseData):
     targetUrn: Optional[str]
     userInteraction: Optional[InteractionTypeValue]
-    interactionCounts: Optional[List[InteractionCount]]
+    interactionCounts: Optional[Tuple[InteractionCount, ...]]
     interactionTypeUrn: Optional[str]
 
 
-@dataclass
+@dataclass(frozen=True)
 class CommentWithInteractions(BaseData):
     comment: BasicComment
     likes: int

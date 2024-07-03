@@ -1,6 +1,6 @@
 import datetime
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Optional, Tuple
 
 from soundcloud.resource.base import BaseData
 from soundcloud.resource.base_item import BaseItem
@@ -8,7 +8,7 @@ from soundcloud.resource.user import BasicUser, User
 from soundcloud.resource.visuals import Visuals
 
 
-@dataclass
+@dataclass(frozen=True)
 class Format(BaseData):
     """Track file format"""
 
@@ -16,7 +16,7 @@ class Format(BaseData):
     mime_type: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class Transcoding(BaseData):
     """Available transcoding for track"""
 
@@ -28,14 +28,14 @@ class Transcoding(BaseData):
     quality: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class Media(BaseData):
     """List of available transcodings"""
 
-    transcodings: List[Transcoding]
+    transcodings: Tuple[Transcoding, ...]
 
 
-@dataclass
+@dataclass(frozen=True)
 class PublisherMetadata(BaseData):
     """Publisher info"""
 
@@ -44,7 +44,7 @@ class PublisherMetadata(BaseData):
     contains_music: bool
 
 
-@dataclass
+@dataclass(frozen=True)
 class BaseTrack(BaseItem):
     caption: Optional[str]
     commentable: bool
@@ -69,21 +69,21 @@ class BaseTrack(BaseItem):
     policy: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class Track(BaseTrack):
     """Track with full user info"""
 
     user: User
 
 
-@dataclass
+@dataclass(frozen=True)
 class BasicTrack(BaseTrack):
     """Track with partial user info"""
 
     user: BasicUser
 
 
-@dataclass
+@dataclass(frozen=True)
 class MiniTrack(BaseData):
     """Track with minimal info"""
 
@@ -93,7 +93,7 @@ class MiniTrack(BaseData):
     policy: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class CommentTrack(BaseData):
     """Track with partial info"""
 

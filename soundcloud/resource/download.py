@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from soundcloud.resource.base import BaseData
 
 
-@dataclass
+@dataclass(frozen=True)
 class OriginalDownload(BaseData):
     """Contains a download link for a track"""
 
