@@ -6,17 +6,17 @@ from soundcloud.resource.base import BaseData
 from soundcloud.resource.visuals import Visuals
 
 
-@dataclass(frozen=True)
+@dataclass
 class Product(BaseData):
     id: str
 
 
-@dataclass(frozen=True)
+@dataclass
 class CreatorSubscription(BaseData):
     product: Product
 
 
-@dataclass(frozen=True)
+@dataclass
 class Badges(BaseData):
     """User badges"""
 
@@ -25,7 +25,7 @@ class Badges(BaseData):
     verified: bool
 
 
-@dataclass(frozen=True)
+@dataclass
 class BasicUser(BaseData):
     """User with partial information"""
 
@@ -50,7 +50,7 @@ class BasicUser(BaseData):
     station_permalink: str
 
 
-@dataclass(frozen=True)
+@dataclass
 class User(BasicUser):
     """User with full information"""
 
@@ -69,7 +69,7 @@ class User(BasicUser):
     visuals: Optional[Visuals]
 
 
-@dataclass(frozen=True)
+@dataclass
 class MissingUser(BaseData):
     """Deleted user"""
 
@@ -77,13 +77,13 @@ class MissingUser(BaseData):
     kind: str
 
 
-@dataclass(frozen=True)
+@dataclass
 class UserStatus(BaseData):
     status: str
     timestamp: str
 
 
-@dataclass(frozen=True)
+@dataclass
 class UserEmail(BaseData):
     """Email address associated with a user"""
 

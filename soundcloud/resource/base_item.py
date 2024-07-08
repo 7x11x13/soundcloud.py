@@ -5,7 +5,7 @@ from typing import List, Optional
 from soundcloud.resource.base import BaseData
 
 
-@dataclass(frozen=True)
+@dataclass
 class BaseItem(BaseData):
     artwork_url: Optional[str]
     created_at: datetime.datetime

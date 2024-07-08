@@ -7,13 +7,13 @@ from soundcloud.resource.comment import BasicComment
 InteractionTypeValue = str
 
 
-@dataclass(frozen=True)
+@dataclass
 class InteractionCount(BaseData):
     count: Optional[int]
     interactionTypeValueUrn: Optional[InteractionTypeValue]
 
 
-@dataclass(frozen=True)
+@dataclass
 class UserInteraction(BaseData):
     targetUrn: Optional[str]
     userInteraction: Optional[InteractionTypeValue]
@@ -21,7 +21,7 @@ class UserInteraction(BaseData):
     interactionTypeUrn: Optional[str]
 
 
-@dataclass(frozen=True)
+@dataclass
 class CommentWithInteractions(BaseData):
     comment: BasicComment
     likes: int

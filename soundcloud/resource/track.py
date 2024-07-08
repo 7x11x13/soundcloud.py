@@ -8,7 +8,7 @@ from soundcloud.resource.user import BasicUser, User
 from soundcloud.resource.visuals import Visuals
 
 
-@dataclass(frozen=True)
+@dataclass
 class Format(BaseData):
     """Track file format"""
 
@@ -16,7 +16,7 @@ class Format(BaseData):
     mime_type: str
 
 
-@dataclass(frozen=True)
+@dataclass
 class Transcoding(BaseData):
     """Available transcoding for track"""
 
@@ -28,14 +28,14 @@ class Transcoding(BaseData):
     quality: str
 
 
-@dataclass(frozen=True)
+@dataclass
 class Media(BaseData):
     """List of available transcodings"""
 
     transcodings: Tuple[Transcoding, ...]
 
 
-@dataclass(frozen=True)
+@dataclass
 class PublisherMetadata(BaseData):
     """Publisher info"""
 
@@ -44,7 +44,7 @@ class PublisherMetadata(BaseData):
     contains_music: bool
 
 
-@dataclass(frozen=True)
+@dataclass
 class BaseTrack(BaseItem):
     caption: Optional[str]
     commentable: bool
@@ -69,21 +69,21 @@ class BaseTrack(BaseItem):
     policy: str
 
 
-@dataclass(frozen=True)
+@dataclass
 class Track(BaseTrack):
     """Track with full user info"""
 
     user: User
 
 
-@dataclass(frozen=True)
+@dataclass
 class BasicTrack(BaseTrack):
     """Track with partial user info"""
 
     user: BasicUser
 
 
-@dataclass(frozen=True)
+@dataclass
 class MiniTrack(BaseData):
     """Track with minimal info"""
 
@@ -93,7 +93,7 @@ class MiniTrack(BaseData):
     policy: str
 
 
-@dataclass(frozen=True)
+@dataclass
 class CommentTrack(BaseData):
     """Track with partial info"""
 

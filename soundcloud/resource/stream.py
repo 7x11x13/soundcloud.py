@@ -8,7 +8,7 @@ from soundcloud.resource.track import BasicTrack
 from soundcloud.resource.user import BasicUser
 
 
-@dataclass(frozen=True)
+@dataclass
 class BaseStreamItem(BaseData):
     created_at: datetime.datetime
     type: str
@@ -17,40 +17,40 @@ class BaseStreamItem(BaseData):
     caption: Optional[str]
 
 
-@dataclass(frozen=True)
+@dataclass
 class Reposted(BaseData):
     target_urn: str
     user_urn: str
     caption: Optional[str]
 
 
-@dataclass(frozen=True)
+@dataclass
 class BaseStreamRepostItem(BaseStreamItem):
     reposted: Optional[Reposted]
 
 
-@dataclass(frozen=True)
+@dataclass
 class TrackStreamItem(BaseStreamItem):
     """Track post in user's feed"""
 
     track: BasicTrack
 
 
-@dataclass(frozen=True)
+@dataclass
 class TrackStreamRepostItem(BaseStreamRepostItem):
     """Track repost in user's feed"""
 
     track: BasicTrack
 
 
-@dataclass(frozen=True)
+@dataclass
 class PlaylistStreamItem(BaseStreamItem):
     """Album or playlist post in user's feed"""
 
     playlist: BasicAlbumPlaylist
 
 
-@dataclass(frozen=True)
+@dataclass
 class PlaylistStreamRepostItem(BaseStreamRepostItem):
     """Album or playlist repost in user's feed"""
 

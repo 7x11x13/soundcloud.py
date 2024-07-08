@@ -4,7 +4,7 @@ from soundcloud.resource.base import BaseData
 from soundcloud.resource.track import BasicTrack
 
 
-@dataclass(frozen=True)
+@dataclass
 class HistoryItem(BaseData):
     """Item in user's listen history"""
 

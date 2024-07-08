@@ -6,20 +6,20 @@ from soundcloud.resource.playlist import AlbumPlaylistNoTracks
 from soundcloud.resource.track import BasicTrack
 
 
-@dataclass(frozen=True)
+@dataclass
 class BaseLike(BaseData):
     created_at: datetime.datetime
     kind: str
 
 
-@dataclass(frozen=True)
+@dataclass
 class TrackLike(BaseLike):
     """Like on a track"""
 
     track: BasicTrack
 
 
-@dataclass(frozen=True)
+@dataclass
 class PlaylistLike(BaseLike):
     """Like on a playlist"""
 

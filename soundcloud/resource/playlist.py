@@ -8,7 +8,7 @@ from soundcloud.resource.track import BasicTrack, MiniTrack
 from soundcloud.resource.user import BasicUser, User
 
 
-@dataclass(frozen=True)
+@dataclass
 class BaseAlbumPlaylist(BaseItem):
     managed_by_feeds: bool
     set_type: str
@@ -18,21 +18,21 @@ class BaseAlbumPlaylist(BaseItem):
     tracks: Tuple[Union[BasicTrack, MiniTrack], ...]
 
 
-@dataclass(frozen=True)
+@dataclass
 class AlbumPlaylist(BaseAlbumPlaylist):
     """Playlist or album with full user info"""
 
     user: User
 
 
-@dataclass(frozen=True)
+@dataclass
 class BasicAlbumPlaylist(BaseAlbumPlaylist):
     """Playlist or album with partial user info"""
 
     user: BasicUser
 
 
-@dataclass(frozen=True)
+@dataclass
 class AlbumPlaylistNoTracks(BaseData):
     """Playlist or album with no track info"""
 

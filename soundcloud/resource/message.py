@@ -6,7 +6,7 @@ from soundcloud.resource.base import BaseData
 from soundcloud.resource.user import BasicUser, MissingUser
 
 
-@dataclass(frozen=True)
+@dataclass
 class Message(BaseData):
     """Single DM between two users"""
 

@@ -68,7 +68,7 @@ def _convert_dict(d, return_type: Type[BaseData]):
 T = TypeVar("T", bound=BaseData)
 
 
-@dataclass(frozen=True)
+@dataclass
 class Request(Generic[T]):
     base = "https://api-v2.soundcloud.com"
     format_url: str
@@ -108,7 +108,7 @@ class Request(Generic[T]):
             return _convert_dict(r.json(), self.return_type)
 
 
-@dataclass(frozen=True)
+@dataclass
 class CollectionRequest(Request, Generic[T]):
     def __call__(
         self,
@@ -150,7 +150,7 @@ class CollectionRequest(Request, Generic[T]):
                 resource_url = urljoin(resource_url, parsed.path)
 
 
-@dataclass(frozen=True)
+@dataclass
 class ListRequest(Request, Generic[T]):
     """
     Requests the resource list at the given url with
@@ -182,7 +182,7 @@ class DataclassInstance(Protocol):
 Q = TypeVar("Q", bound=DataclassInstance)
 
 
-@dataclass(frozen=True)
+@dataclass
 class GraphQLRequest(Generic[Q, T]):
     base = "https://graph.soundcloud.com/graphql"
     operation_name: str
@@ -323,13 +323,13 @@ graphql endpoints
 """
 
 
-@dataclass(frozen=True)
+@dataclass
 class UserInteractionsQueryResult(BaseData):
     user: Tuple[UserInteraction, ...]
     creator: Tuple[UserInteraction, ...]
 
 
-@dataclass(frozen=True)
+@dataclass
 class UserInteractionsQueryParams:
     createdByProfileUrn: str
     interactionTypeUrn: str
