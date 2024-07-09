@@ -63,7 +63,7 @@ class BaseTrack(BaseItem):
     waveform_url: str
     media: Media
     station_urn: Optional[str]
-    station_permalink: str
+    station_permalink: Optional[str]
     track_authorization: str
     monetization_model: str
     policy: str
@@ -116,7 +116,7 @@ class CommentTrack(BaseData):
     display_date: datetime.datetime
     media: Media
     station_urn: Optional[str]
-    station_permalink: str
+    station_permalink: Optional[str]
     track_authorization: str
     monetization_model: str
     policy: str

@@ -47,7 +47,7 @@ class BasicUser(BaseData):
     country_code: Optional[str]
     badges: Badges
     station_urn: Optional[str]
-    station_permalink: str
+    station_permalink: Optional[str]
 
 
 @dataclass
