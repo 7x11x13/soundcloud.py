@@ -1,5 +1,6 @@
 import datetime
 from dataclasses import dataclass
+from typing import Optional
 
 from soundcloud.resource.base import BaseData
 from soundcloud.resource.track import CommentTrack
@@ -19,7 +20,7 @@ class BasicComment(BaseData):
     id: int
     body: str
     created_at: datetime.datetime
-    timestamp: int
+    timestamp: Optional[int]
     track_id: int
     user_id: int
     self: CommentSelf
