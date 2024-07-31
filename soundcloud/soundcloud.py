@@ -13,6 +13,7 @@ from soundcloud.requests import (
     PlaylistLikersRequest,
     PlaylistRepostersRequest,
     PlaylistRequest,
+    PostPlaylistRequest,
     ResolveRequest,
     SearchAlbumsRequest,
     SearchPlaylistsRequest,
@@ -237,6 +238,13 @@ class SoundCloud:
         If the ID is invalid, return None
         """
         return PlaylistRequest(self, playlist_id=playlist_id)
+
+    def post_playlist(self, body: dict) -> Optional[BasicAlbumPlaylist]:
+        """
+        Create a new playlist with the given track ids.
+        """
+        return PostPlaylistRequest(self, body=body)
+
 
     def get_playlist_likers(
         self, playlist_id: int, **kwargs

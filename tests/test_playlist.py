@@ -27,3 +27,20 @@ def test_playlist_reposters(client: SoundCloud):
             found = True
             break
     assert found
+
+
+def test_post_playlist(client: SoundCloud):
+    body = {
+        "playlist": {
+            "sharing": "private",
+            "title": "Playlist Test",
+            "tracks": [1597192512],
+        }
+    }
+
+    playlist = client.post_playlist(body)
+    assert (
+        isinstance(playlist, BasicAlbumPlaylist)
+        and playlist.title == "Playlist Test"
+        and playlist.tracks[0].id == 1597192512
+    )

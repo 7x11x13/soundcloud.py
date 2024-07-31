@@ -1,3 +1,4 @@
+import json
 import string
 from dataclasses import asdict, dataclass
 from typing import (
@@ -73,6 +74,8 @@ class Request(Generic[T]):
     base = "https://api-v2.soundcloud.com"
     format_url: str
     return_type: Type[T]
+    method: str = 'GET'
+    body: str = ""
 
     def _format_url_and_remove_params(self, kwargs: dict) -> str:
         format_args = {
@@ -85,6 +88,19 @@ class Request(Generic[T]):
             if k in format_args:
                 args[k] = kwargs.pop(k)
         return self.base + self.format_url.format(**args)
+
+    def _parse_body(self, kwargs: dict) -> dict:
+        format_args = {
+            tup[1]
+            for tup in string.Formatter().parse(self.body)
+            if tup[1] is not None
+        }
+        args = {}
+        for k in list(kwargs.keys()):
+            if k in format_args:
+                args[k] = kwargs.pop(k)
+        formatted_body = self.body.format(**args).replace("'", '"')
+        return json.loads(formatted_body)
 
     def __call__(
         self, client: "SoundCloud", use_auth: bool = True, **kwargs
@@ -99,13 +115,24 @@ class Request(Generic[T]):
         params = kwargs
         params["client_id"] = client.client_id
         headers = client._get_default_headers()
+
         if use_auth and client._authorization is not None:
             headers["Authorization"] = client._authorization
-        with requests.get(resource_url, params=params, headers=headers) as r:
-            if r.status_code in (400, 404, 500):
-                return None
-            r.raise_for_status()
-            return _convert_dict(r.json(), self.return_type)
+
+        if self.method == 'GET':
+            with requests.get(resource_url, params=params, headers=headers) as r:
+                pass
+        elif self.method == 'POST':
+            body = self._parse_body(kwargs)
+            with requests.post(resource_url, json=body, headers=headers) as r:
+                pass
+        else:
+            raise ValueError(f"Invalid method: {self.method}")
+
+        if r.status_code in (400, 404, 500):
+            return None
+        r.raise_for_status()
+        return _convert_dict(r.json(), self.return_type)
 
 
 @dataclass
@@ -247,6 +274,9 @@ SearchUsersRequest = CollectionRequest[User]("/search/users", User)  # ?filter.p
 TagRecentTracksRequest = CollectionRequest[Track]("/recent-tracks/{tag}", Track)
 PlaylistRequest = Request[BasicAlbumPlaylist](
     "/playlists/{playlist_id}", BasicAlbumPlaylist
+)
+PostPlaylistRequest = Request[BasicAlbumPlaylist](
+    "/playlists", BasicAlbumPlaylist, method='POST', body="{body}"
 )
 PlaylistLikersRequest = CollectionRequest[User]("/playlists/{playlist_id}/likers", User)
 PlaylistRepostersRequest = CollectionRequest[User](
