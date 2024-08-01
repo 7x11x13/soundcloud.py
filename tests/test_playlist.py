@@ -47,8 +47,7 @@ def test_post_and_delete_playlist(client: SoundCloud):
     )
 
     # DELETE
-    playlist_id = playlist.id
-    response = client.delete_playlist(playlist_id)
+    response = client.delete_playlist(playlist.id)
     assert (
             response["status_code"] == 204
     )
