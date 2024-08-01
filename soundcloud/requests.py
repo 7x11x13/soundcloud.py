@@ -111,7 +111,7 @@ class Request(Generic[T]):
             headers["Authorization"] = client._authorization
 
         with requests.request(
-            self.method, resource_url, json=body, headers=headers
+            self.method, resource_url, json=body, headers=headers, params=params
         ) as r:
             if r.status_code in (400, 404, 500):
                 return None
