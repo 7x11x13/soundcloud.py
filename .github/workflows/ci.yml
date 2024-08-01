@@ -26,6 +26,7 @@ jobs:
     - name: Type check
       run: mypy .
     - name: Coveralls
+      if: github.event_name != 'pull_request'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         client_id: ${{ secrets.CLIENT_ID }}

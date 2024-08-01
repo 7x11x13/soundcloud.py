@@ -1,6 +1,12 @@
 import itertools
+import sys
 import re
 from typing import Dict, Generator, List, Optional
+
+if sys.version_info < (3, 8):
+    from typing_extensions import Literal
+else:
+    from typing import Literal
 
 import requests
 from requests import HTTPError
@@ -13,6 +19,8 @@ from soundcloud.requests import (
     PlaylistLikersRequest,
     PlaylistRepostersRequest,
     PlaylistRequest,
+    PostPlaylistRequest,
+    DeletePlaylistRequest,
     ResolveRequest,
     SearchAlbumsRequest,
     SearchPlaylistsRequest,
@@ -61,6 +69,7 @@ from .resource.playlist import AlbumPlaylist, BasicAlbumPlaylist
 from .resource.track import BasicTrack, Track
 from .resource.user import User, UserEmail
 from .resource.web_profile import WebProfile
+from .resource.response import NoContentResponse
 
 
 class SoundCloud:
@@ -72,7 +81,7 @@ class SoundCloud:
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0"
     )
     _ASSETS_SCRIPTS_REGEX = re.compile(
-        r"src=\"(https:\/\/a-v2\.sndcdn\.com/assets/[^\.]+\.js)\""
+        r"src=\"(https:\/\/a-v2\.sndcdn\.com/assets/0-[^\.]+\.js)\""
     )
     _CLIENT_ID_REGEX = re.compile(r"client_id:\"([^\"]+)\"")
     client_id: str
@@ -116,7 +125,8 @@ class SoundCloud:
     def _get_default_headers(self) -> Dict[str, str]:
         return {"User-Agent": self._user_agent}
 
-    def generate_client_id(self) -> str:
+    @classmethod
+    def generate_client_id(cls) -> str:
         """Generates a SoundCloud client ID
 
         Raises:
@@ -127,13 +137,13 @@ class SoundCloud:
         """
         r = requests.get("https://soundcloud.com")
         r.raise_for_status()
-        matches = self._ASSETS_SCRIPTS_REGEX.findall(r.text)
+        matches = cls._ASSETS_SCRIPTS_REGEX.findall(r.text)
         if not matches:
             raise ClientIDGenerationError("No asset scripts found")
-        url = matches[-1]
+        url = matches[0]
         r = requests.get(url)
         r.raise_for_status()
-        client_id = self._CLIENT_ID_REGEX.search(r.text)
+        client_id = cls._CLIENT_ID_REGEX.search(r.text)
         if not client_id:
             raise ClientIDGenerationError(f"Could not find client_id in script '{url}'")
         return client_id.group(1)
@@ -237,6 +247,21 @@ class SoundCloud:
         If the ID is invalid, return None
         """
         return PlaylistRequest(self, playlist_id=playlist_id)
+
+    def post_playlist(
+        self, sharing: Literal["private", "public"], title: str, tracks: List[int]
+    ) -> Optional[BasicAlbumPlaylist]:
+        """
+        Create a new playlist
+        """
+        body = {"playlist": {"sharing": sharing, "title": title, "tracks": tracks}}
+        return PostPlaylistRequest(self, body=body)
+
+    def delete_playlist(self, playlist_id: int) -> Optional[NoContentResponse]:
+        """
+        Delete a playlist
+        """
+        return DeletePlaylistRequest(self, playlist_id=playlist_id)
 
     def get_playlist_likers(
         self, playlist_id: int, **kwargs

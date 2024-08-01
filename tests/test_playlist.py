@@ -1,4 +1,4 @@
-from soundcloud import BasicAlbumPlaylist, SoundCloud
+from soundcloud import BasicAlbumPlaylist, SoundCloud, NoContentResponse
 
 
 def test_get_playlist(client: SoundCloud):
@@ -27,3 +27,17 @@ def test_playlist_reposters(client: SoundCloud):
             found = True
             break
     assert found
+
+
+def test_post_and_delete_playlist(client: SoundCloud):
+    # POST
+    playlist = client.post_playlist("private", "Playlist Test", [1032303631])
+    assert (
+        isinstance(playlist, BasicAlbumPlaylist)
+        and playlist.title == "Playlist Test"
+        and playlist.tracks[0].id == 1032303631
+    )
+
+    # DELETE
+    response = client.delete_playlist(playlist.id)
+    assert isinstance(response, NoContentResponse) and response.status_code == 204

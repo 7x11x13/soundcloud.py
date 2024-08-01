@@ -1,5 +1,6 @@
 import string
 from dataclasses import asdict, dataclass
+import sys
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -26,6 +27,7 @@ from soundcloud.resource.graphql import UserInteraction
 from soundcloud.resource.history import HistoryItem
 from soundcloud.resource.message import Message
 from soundcloud.resource.playlist import AlbumPlaylist, BasicAlbumPlaylist
+from soundcloud.resource.response import NoContentResponse
 from soundcloud.resource.track import BasicTrack, Track
 from soundcloud.resource.user import User, UserEmail
 from soundcloud.resource.web_profile import WebProfile
@@ -33,10 +35,10 @@ from soundcloud.resource.web_profile import WebProfile
 if TYPE_CHECKING:
     from soundcloud.soundcloud import SoundCloud
 
-try:
+if sys.version_info >= (3, 8):
     from typing import Protocol
-except ImportError:
-    from typing_extensions import Protocol  # type: ignore[assignment]
+else:
+    from typing_extensions import Protocol
 
 try:
     from typing import get_args, get_origin  # type: ignore[attr-defined]
@@ -73,6 +75,7 @@ class Request(Generic[T]):
     base = "https://api-v2.soundcloud.com"
     format_url: str
     return_type: Type[T]
+    method: str = "GET"
 
     def _format_url_and_remove_params(self, kwargs: dict) -> str:
         format_args = {
@@ -87,7 +90,11 @@ class Request(Generic[T]):
         return self.base + self.format_url.format(**args)
 
     def __call__(
-        self, client: "SoundCloud", use_auth: bool = True, **kwargs
+        self,
+        client: "SoundCloud",
+        use_auth: bool = True,
+        body: Optional[dict] = None,
+        **kwargs,
     ) -> Optional[T]:
         """
         Requests the resource at the given url with
@@ -99,30 +106,39 @@ class Request(Generic[T]):
         params = kwargs
         params["client_id"] = client.client_id
         headers = client._get_default_headers()
+
         if use_auth and client._authorization is not None:
             headers["Authorization"] = client._authorization
-        with requests.get(resource_url, params=params, headers=headers) as r:
+
+        with requests.request(
+            self.method, resource_url, json=body, headers=headers, params=params
+        ) as r:
             if r.status_code in (400, 404, 500):
                 return None
             r.raise_for_status()
-            return _convert_dict(r.json(), self.return_type)
+
+        if self.return_type == NoContentResponse:
+            return NoContentResponse(r.status_code)  # type: ignore[return-value]
+        return _convert_dict(r.json(), self.return_type)
 
 
 @dataclass
 class CollectionRequest(Request, Generic[T]):
+    """
+    Yields resources from the given url with
+    parameters given by kwargs. Converts the resources
+    to type T before yielding
+    """
+
     def __call__(
         self,
         client: "SoundCloud",
         use_auth: bool = True,
+        body: Optional[dict] = None,
         offset: Optional[str] = None,
         limit: Optional[int] = None,
         **kwargs,
     ) -> Generator[T, None, None]:
-        """
-        Yields resources from the given url with
-        parameters given by kwargs. Converts the resources
-        to type T before yielding
-        """
         resource_url = self._format_url_and_remove_params(kwargs)
         params = kwargs
         params["client_id"] = client.client_id
@@ -158,7 +174,9 @@ class ListRequest(Request, Generic[T]):
     to type T and returns them.
     """
 
-    def __call__(self, client: "SoundCloud", use_auth=True, **kwargs) -> List[T]:
+    def __call__(
+        self, client: "SoundCloud", use_auth=True, body: Optional[dict] = None, **kwargs
+    ) -> List[T]:
         resource_url = self._format_url_and_remove_params(kwargs)
         params = kwargs
         params["client_id"] = client.client_id
@@ -247,6 +265,12 @@ SearchUsersRequest = CollectionRequest[User]("/search/users", User)  # ?filter.p
 TagRecentTracksRequest = CollectionRequest[Track]("/recent-tracks/{tag}", Track)
 PlaylistRequest = Request[BasicAlbumPlaylist](
     "/playlists/{playlist_id}", BasicAlbumPlaylist
+)
+PostPlaylistRequest = Request[BasicAlbumPlaylist](
+    "/playlists", BasicAlbumPlaylist, method="POST"
+)
+DeletePlaylistRequest = Request[NoContentResponse](
+    "/playlists/{playlist_id}", NoContentResponse, method="DELETE"
 )
 PlaylistLikersRequest = CollectionRequest[User]("/playlists/{playlist_id}/likers", User)
 PlaylistRepostersRequest = CollectionRequest[User](

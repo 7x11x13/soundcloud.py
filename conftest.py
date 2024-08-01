@@ -7,4 +7,4 @@ from soundcloud import SoundCloud
 
 @pytest.fixture(scope="session")
 def client(request):
-    return SoundCloud(os.environ["client_id"], os.environ["auth_token"])
+    return SoundCloud(auth_token=os.environ.get("auth_token"))

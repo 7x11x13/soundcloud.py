@@ -11,6 +11,7 @@ from soundcloud.resource.playlist import (
     AlbumPlaylistNoTracks,
     BasicAlbumPlaylist,
 )
+from soundcloud.resource.response import NoContentResponse
 from soundcloud.resource.stream import (
     PlaylistStreamItem,
     PlaylistStreamRepostItem,
@@ -77,4 +78,5 @@ __all__ = [
     "Visual",
     "Visuals",
     "WebProfile",
+    "NoContentResponse",
 ]

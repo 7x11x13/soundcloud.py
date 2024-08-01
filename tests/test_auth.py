@@ -24,7 +24,7 @@ def test_invalid_auth_token_and_client_id():
 
 
 def test_invalid_auth_token_valid_client_id():
-    sc = SoundCloud(os.environ["client_id"], "invalid")
+    sc = SoundCloud(auth_token="invalid")
     assert (not sc.is_auth_token_valid()) and sc.is_client_id_valid()
 
 
