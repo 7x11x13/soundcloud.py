@@ -1,5 +1,6 @@
 import string
 from dataclasses import asdict, dataclass
+import sys
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -34,10 +35,10 @@ from soundcloud.resource.web_profile import WebProfile
 if TYPE_CHECKING:
     from soundcloud.soundcloud import SoundCloud
 
-try:
+if sys.version_info >= (3, 8):
     from typing import Protocol
-except ImportError:
-    pass  # type: ignore[assignment]
+else:
+    from typing_extensions import Protocol
 
 try:
     from typing import get_args, get_origin  # type: ignore[attr-defined]
