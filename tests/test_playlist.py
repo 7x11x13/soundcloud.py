@@ -29,7 +29,8 @@ def test_playlist_reposters(client: SoundCloud):
     assert found
 
 
-def test_post_playlist(client: SoundCloud):
+def test_post_and_delete_playlist(client: SoundCloud):
+    # POST
     body = {
         "playlist": {
             "sharing": "private",
@@ -43,4 +44,11 @@ def test_post_playlist(client: SoundCloud):
         isinstance(playlist, BasicAlbumPlaylist)
         and playlist.title == "Playlist Test"
         and playlist.tracks[0].id == 1597192512
+    )
+
+    # DELETE
+    playlist_id = playlist.id
+    response = client.delete_playlist(playlist_id)
+    assert (
+            response["status_code"] == 204
     )

@@ -74,31 +74,24 @@ class Request(Generic[T]):
     base = "https://api-v2.soundcloud.com"
     format_url: str
     return_type: Type[T]
-    method: str = 'GET'
+    method: str = "GET"
     body: str = ""
 
-    def _format_url_and_remove_params(self, kwargs: dict) -> str:
+    def _format_string(self, format_string: str, kwargs: dict) -> dict:
         format_args = {
             tup[1]
-            for tup in string.Formatter().parse(self.format_url)
+            for tup in string.Formatter().parse(format_string)
             if tup[1] is not None
         }
-        args = {}
-        for k in list(kwargs.keys()):
-            if k in format_args:
-                args[k] = kwargs.pop(k)
+        args = {k: kwargs.pop(k) for k in list(kwargs.keys()) if k in format_args}
+        return args
+
+    def _format_url(self, kwargs: dict) -> str:
+        args = self._format_string(self.format_url, kwargs)
         return self.base + self.format_url.format(**args)
 
     def _parse_body(self, kwargs: dict) -> dict:
-        format_args = {
-            tup[1]
-            for tup in string.Formatter().parse(self.body)
-            if tup[1] is not None
-        }
-        args = {}
-        for k in list(kwargs.keys()):
-            if k in format_args:
-                args[k] = kwargs.pop(k)
+        args = self._format_string(self.body, kwargs)
         formatted_body = self.body.format(**args).replace("'", '"')
         return json.loads(formatted_body)
 
@@ -111,7 +104,7 @@ class Request(Generic[T]):
         to type T and returns it. If the
         resource does not exist, returns None
         """
-        resource_url = self._format_url_and_remove_params(kwargs)
+        resource_url = self._format_url(kwargs)
         params = kwargs
         params["client_id"] = client.client_id
         headers = client._get_default_headers()
@@ -126,12 +119,20 @@ class Request(Generic[T]):
             body = self._parse_body(kwargs)
             with requests.post(resource_url, json=body, headers=headers) as r:
                 pass
+        elif self.method == 'DELETE':
+            with requests.delete(resource_url, headers=headers) as r:
+                pass
         else:
             raise ValueError(f"Invalid method: {self.method}")
 
         if r.status_code in (400, 404, 500):
             return None
         r.raise_for_status()
+
+        if self.return_type is None:
+            return {
+                "status_code": r.status_code,
+            }
         return _convert_dict(r.json(), self.return_type)
 
 
@@ -150,7 +151,7 @@ class CollectionRequest(Request, Generic[T]):
         parameters given by kwargs. Converts the resources
         to type T before yielding
         """
-        resource_url = self._format_url_and_remove_params(kwargs)
+        resource_url = self._format_url(kwargs)
         params = kwargs
         params["client_id"] = client.client_id
         if offset is not None:
@@ -278,6 +279,7 @@ PlaylistRequest = Request[BasicAlbumPlaylist](
 PostPlaylistRequest = Request[BasicAlbumPlaylist](
     "/playlists", BasicAlbumPlaylist, method='POST', body="{body}"
 )
+DeletePlaylistRequest = Request[None]("/playlists/{playlist_id}", None, method='DELETE')
 PlaylistLikersRequest = CollectionRequest[User]("/playlists/{playlist_id}/likers", User)
 PlaylistRepostersRequest = CollectionRequest[User](
     "/playlists/{playlist_id}/reposters", User

@@ -14,6 +14,7 @@ from soundcloud.requests import (
     PlaylistRepostersRequest,
     PlaylistRequest,
     PostPlaylistRequest,
+    DeletePlaylistRequest,
     ResolveRequest,
     SearchAlbumsRequest,
     SearchPlaylistsRequest,
@@ -62,6 +63,7 @@ from .resource.playlist import AlbumPlaylist, BasicAlbumPlaylist
 from .resource.track import BasicTrack, Track
 from .resource.user import User, UserEmail
 from .resource.web_profile import WebProfile
+from .resource.response import NoContentResponse
 
 
 class SoundCloud:
@@ -241,9 +243,16 @@ class SoundCloud:
 
     def post_playlist(self, body: dict) -> Optional[BasicAlbumPlaylist]:
         """
-        Create a new playlist with the given track ids.
+        Create a new playlist
         """
         return PostPlaylistRequest(self, body=body)
+
+
+    def delete_playlist(self, playlist_id: int) -> Optional[NoContentResponse]:
+        """
+        Delete a playlist
+        """
+        return DeletePlaylistRequest(self, playlist_id=playlist_id)
 
 
     def get_playlist_likers(
