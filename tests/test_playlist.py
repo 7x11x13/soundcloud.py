@@ -1,4 +1,4 @@
-from soundcloud import BasicAlbumPlaylist, SoundCloud
+from soundcloud import BasicAlbumPlaylist, SoundCloud, NoContentResponse
 
 
 def test_get_playlist(client: SoundCloud):
@@ -31,23 +31,13 @@ def test_playlist_reposters(client: SoundCloud):
 
 def test_post_and_delete_playlist(client: SoundCloud):
     # POST
-    body = {
-        "playlist": {
-            "sharing": "private",
-            "title": "Playlist Test",
-            "tracks": [1597192512],
-        }
-    }
-
-    playlist = client.post_playlist(body)
+    playlist = client.post_playlist("private", "Playlist Test", [1032303631])
     assert (
         isinstance(playlist, BasicAlbumPlaylist)
         and playlist.title == "Playlist Test"
-        and playlist.tracks[0].id == 1597192512
+        and playlist.tracks[0].id == 1032303631
     )
 
     # DELETE
     response = client.delete_playlist(playlist.id)
-    assert (
-            response["status_code"] == 204
-    )
+    assert isinstance(response, NoContentResponse) and response.status_code == 204

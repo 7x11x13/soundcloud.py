@@ -1,4 +1,3 @@
-import json
 import string
 from dataclasses import asdict, dataclass
 from typing import (
@@ -27,6 +26,7 @@ from soundcloud.resource.graphql import UserInteraction
 from soundcloud.resource.history import HistoryItem
 from soundcloud.resource.message import Message
 from soundcloud.resource.playlist import AlbumPlaylist, BasicAlbumPlaylist
+from soundcloud.resource.response import NoContentResponse
 from soundcloud.resource.track import BasicTrack, Track
 from soundcloud.resource.user import User, UserEmail
 from soundcloud.resource.web_profile import WebProfile
@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 try:
     from typing import Protocol
 except ImportError:
-    from typing_extensions import Protocol  # type: ignore[assignment]
+    pass  # type: ignore[assignment]
 
 try:
     from typing import get_args, get_origin  # type: ignore[attr-defined]
@@ -75,28 +75,25 @@ class Request(Generic[T]):
     format_url: str
     return_type: Type[T]
     method: str = "GET"
-    body: str = ""
 
-    def _format_string(self, format_string: str, kwargs: dict) -> dict:
+    def _format_url_and_remove_params(self, kwargs: dict) -> str:
         format_args = {
             tup[1]
-            for tup in string.Formatter().parse(format_string)
+            for tup in string.Formatter().parse(self.format_url)
             if tup[1] is not None
         }
-        args = {k: kwargs.pop(k) for k in list(kwargs.keys()) if k in format_args}
-        return args
-
-    def _format_url(self, kwargs: dict) -> str:
-        args = self._format_string(self.format_url, kwargs)
+        args = {}
+        for k in list(kwargs.keys()):
+            if k in format_args:
+                args[k] = kwargs.pop(k)
         return self.base + self.format_url.format(**args)
 
-    def _parse_body(self, kwargs: dict) -> dict:
-        args = self._format_string(self.body, kwargs)
-        formatted_body = self.body.format(**args).replace("'", '"')
-        return json.loads(formatted_body)
-
     def __call__(
-        self, client: "SoundCloud", use_auth: bool = True, **kwargs
+        self,
+        client: "SoundCloud",
+        use_auth: bool = True,
+        body: Optional[dict] = None,
+        **kwargs,
     ) -> Optional[T]:
         """
         Requests the resource at the given url with
@@ -104,7 +101,7 @@ class Request(Generic[T]):
         to type T and returns it. If the
         resource does not exist, returns None
         """
-        resource_url = self._format_url(kwargs)
+        resource_url = self._format_url_and_remove_params(kwargs)
         params = kwargs
         params["client_id"] = client.client_id
         headers = client._get_default_headers()
@@ -112,46 +109,36 @@ class Request(Generic[T]):
         if use_auth and client._authorization is not None:
             headers["Authorization"] = client._authorization
 
-        if self.method == 'GET':
-            with requests.get(resource_url, params=params, headers=headers) as r:
-                pass
-        elif self.method == 'POST':
-            body = self._parse_body(kwargs)
-            with requests.post(resource_url, json=body, headers=headers) as r:
-                pass
-        elif self.method == 'DELETE':
-            with requests.delete(resource_url, headers=headers) as r:
-                pass
-        else:
-            raise ValueError(f"Invalid method: {self.method}")
+        with requests.request(
+            self.method, resource_url, json=body, headers=headers
+        ) as r:
+            if r.status_code in (400, 404, 500):
+                return None
+            r.raise_for_status()
 
-        if r.status_code in (400, 404, 500):
-            return None
-        r.raise_for_status()
-
-        if self.return_type is None:
-            return {
-                "status_code": r.status_code,
-            }
+        if self.return_type == NoContentResponse:
+            return NoContentResponse(r.status_code)  # type: ignore[return-value]
         return _convert_dict(r.json(), self.return_type)
 
 
 @dataclass
 class CollectionRequest(Request, Generic[T]):
+    """
+    Yields resources from the given url with
+    parameters given by kwargs. Converts the resources
+    to type T before yielding
+    """
+
     def __call__(
         self,
         client: "SoundCloud",
         use_auth: bool = True,
+        body: Optional[dict] = None,
         offset: Optional[str] = None,
         limit: Optional[int] = None,
         **kwargs,
     ) -> Generator[T, None, None]:
-        """
-        Yields resources from the given url with
-        parameters given by kwargs. Converts the resources
-        to type T before yielding
-        """
-        resource_url = self._format_url(kwargs)
+        resource_url = self._format_url_and_remove_params(kwargs)
         params = kwargs
         params["client_id"] = client.client_id
         if offset is not None:
@@ -186,7 +173,9 @@ class ListRequest(Request, Generic[T]):
     to type T and returns them.
     """
 
-    def __call__(self, client: "SoundCloud", use_auth=True, **kwargs) -> List[T]:
+    def __call__(
+        self, client: "SoundCloud", use_auth=True, body: Optional[dict] = None, **kwargs
+    ) -> List[T]:
         resource_url = self._format_url_and_remove_params(kwargs)
         params = kwargs
         params["client_id"] = client.client_id
@@ -277,9 +266,11 @@ PlaylistRequest = Request[BasicAlbumPlaylist](
     "/playlists/{playlist_id}", BasicAlbumPlaylist
 )
 PostPlaylistRequest = Request[BasicAlbumPlaylist](
-    "/playlists", BasicAlbumPlaylist, method='POST', body="{body}"
+    "/playlists", BasicAlbumPlaylist, method="POST"
 )
-DeletePlaylistRequest = Request[None]("/playlists/{playlist_id}", None, method='DELETE')
+DeletePlaylistRequest = Request[NoContentResponse](
+    "/playlists/{playlist_id}", NoContentResponse, method="DELETE"
+)
 PlaylistLikersRequest = CollectionRequest[User]("/playlists/{playlist_id}/likers", User)
 PlaylistRepostersRequest = CollectionRequest[User](
     "/playlists/{playlist_id}/reposters", User
