@@ -249,12 +249,23 @@ class SoundCloud:
         return PlaylistRequest(self, playlist_id=playlist_id)
 
     def post_playlist(
-        self, sharing: Literal["private", "public"], title: str, tracks: List[int], description: str = ""
+        self,
+        sharing: Literal["private", "public"],
+        title: str,
+        tracks: List[int],
+        description: str = "",
     ) -> Optional[BasicAlbumPlaylist]:
         """
         Create a new playlist
         """
-        body = {"playlist": {"sharing": sharing, "title": title, "tracks": tracks, "description": description}}
+        body = {
+            "playlist": {
+                "sharing": sharing,
+                "title": title,
+                "tracks": tracks,
+                "description": description,
+            }
+        }
         return PostPlaylistRequest(self, body=body)
 
     def delete_playlist(self, playlist_id: int) -> Optional[NoContentResponse]:

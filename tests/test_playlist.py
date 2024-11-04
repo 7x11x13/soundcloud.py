@@ -31,7 +31,9 @@ def test_playlist_reposters(client: SoundCloud):
 
 def test_post_and_delete_playlist(client: SoundCloud):
     # POST
-    playlist = client.post_playlist("private", "Playlist Test", [1032303631], "Playlist Description")
+    playlist = client.post_playlist(
+        "private", "Playlist Test", [1032303631], "Playlist Description"
+    )
     assert (
         isinstance(playlist, BasicAlbumPlaylist)
         and playlist.title == "Playlist Test"
