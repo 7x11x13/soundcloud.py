@@ -81,7 +81,7 @@ class SoundCloud:
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0"
     )
     _ASSETS_SCRIPTS_REGEX = re.compile(
-        r"src=\"(https:\/\/a-v2\.sndcdn\.com/assets/0-[^\.]+\.js)\""
+        r"src=\"(https:\/\/a-v2\.sndcdn\.com/assets/.*\.js)\""
     )
     _CLIENT_ID_REGEX = re.compile(r"client_id:\"([^\"]+)\"")
     client_id: str
@@ -140,13 +140,13 @@ class SoundCloud:
         matches = cls._ASSETS_SCRIPTS_REGEX.findall(r.text)
         if not matches:
             raise ClientIDGenerationError("No asset scripts found")
-        url = matches[0]
-        r = requests.get(url)
-        r.raise_for_status()
-        client_id = cls._CLIENT_ID_REGEX.search(r.text)
-        if not client_id:
-            raise ClientIDGenerationError(f"Could not find client_id in script '{url}'")
-        return client_id.group(1)
+        for url in matches:
+            r = requests.get(url)
+            r.raise_for_status()
+            client_id = cls._CLIENT_ID_REGEX.search(r.text)
+            if client_id:
+                return client_id.group(1)
+        raise ClientIDGenerationError(f"Could not find client_id in script '{url}'")
 
     def is_client_id_valid(self) -> bool:
         """
