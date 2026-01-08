@@ -13,9 +13,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
-        python-version: 3.7
+        python-version: "3.12"
     - name: Install dependencies
       run: |
         pip install -e .[dev]
@@ -34,26 +34,3 @@ jobs:
       run: |
         coverage run --source=soundcloud -m pytest
         coveralls --service=github
-  publish:
-    needs: test
-    environment: test
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.7
-    - name: Install dependencies
-      run: |
-        pip install -e .[dev]
-    - name: Build package
-      run: |
-        pip install --upgrade build
-        python -m build
-    - name: Publish package
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        user: __token__
-        password: ${{ secrets.PYPI_API_TOKEN }}
