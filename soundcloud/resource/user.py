@@ -55,7 +55,7 @@ class User(BasicUser):
     """User with full information"""
 
     comments_count: int
-    created_at: datetime.datetime
+    created_at: Optional[datetime.datetime]
     creator_subscriptions: Tuple[CreatorSubscription, ...]
     creator_subscription: CreatorSubscription
     description: Optional[str]
