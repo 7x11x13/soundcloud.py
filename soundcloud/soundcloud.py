@@ -370,8 +370,9 @@ class SoundCloud:
                 assert user_interactions.interactionCounts is not None
                 likes = list(
                     filter(
-                        lambda x: x.interactionTypeValueUrn
-                        == "sc:interactiontypevalue:like",
+                        lambda x: (
+                            x.interactionTypeValueUrn == "sc:interactiontypevalue:like"
+                        ),
                         user_interactions.interactionCounts,
                     )
                 )
