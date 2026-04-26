@@ -24,7 +24,7 @@ setup(
     install_requires=[
         "dacite>=1.8.1",
         "python-dateutil>=2.8.2",
-        "curl_cffi>=0.14",
+        "curl_cffi>=0.10,<0.16",
     ],
     extras_require={
         "dev": [
