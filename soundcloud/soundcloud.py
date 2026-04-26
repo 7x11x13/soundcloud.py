@@ -9,6 +9,7 @@ else:
     from typing import Literal
 
 from curl_cffi import requests
+from curl_cffi.requests import BrowserTypeLiteral
 from curl_cffi.requests.exceptions import HTTPError
 
 from soundcloud.exceptions import ClientIDGenerationError
@@ -95,10 +96,10 @@ class SoundCloud:
         client_id: Optional[str] = None,
         auth_token: Optional[str] = None,
         user_agent: str = _DEFAULT_USER_AGENT,
-        impersonate: str = "chrome",
+        impersonate: BrowserTypeLiteral = "chrome",
     ) -> None:
         self._impersonate = impersonate
-        self._session: requests.Session = requests.Session(impersonate=impersonate)  # type: ignore[arg-type]
+        self._session: requests.Session = requests.Session(impersonate=impersonate)
         if not client_id:
             client_id = self.generate_client_id(impersonate=impersonate)
 
@@ -129,7 +130,7 @@ class SoundCloud:
         return {"User-Agent": self._user_agent}
 
     @classmethod
-    def generate_client_id(cls, impersonate: str = "chrome") -> str:
+    def generate_client_id(cls, impersonate: BrowserTypeLiteral = "chrome") -> str:
         """Generates a SoundCloud client ID
 
         Raises:
@@ -138,7 +139,7 @@ class SoundCloud:
         Returns:
             str: Valid client ID
         """
-        with requests.Session(impersonate=impersonate) as s:  # type: ignore[arg-type]
+        with requests.Session(impersonate=impersonate) as s:
             r = s.get("https://soundcloud.com")
             r.raise_for_status()
             matches = cls._ASSETS_SCRIPTS_REGEX.findall(r.text)

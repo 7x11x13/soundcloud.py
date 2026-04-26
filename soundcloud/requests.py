@@ -9,6 +9,7 @@ from typing import (
     Generator,
     Generic,
     List,
+    Literal,
     Optional,
     Tuple,
     Type,
@@ -73,7 +74,7 @@ class Request(Generic[T]):
     base = "https://api-v2.soundcloud.com"
     format_url: str
     return_type: Type[T]
-    method: str = "GET"
+    method: Literal["GET", "POST", "DELETE"] = "GET"
 
     def _format_url_and_remove_params(self, kwargs: dict) -> str:
         format_args = {
@@ -109,7 +110,7 @@ class Request(Generic[T]):
             headers["Authorization"] = client._authorization
 
         r = client._session.request(
-            self.method,  # type: ignore[arg-type]
+            self.method,
             resource_url,
             json=body,
             headers=headers,
