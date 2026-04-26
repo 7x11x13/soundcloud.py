@@ -1,12 +1,6 @@
 import itertools
-import sys
 import re
-from typing import Dict, Generator, List, Optional
-
-if sys.version_info < (3, 8):
-    from typing_extensions import Literal
-else:
-    from typing import Literal
+from typing import Dict, Generator, List, Literal, Optional
 
 from curl_cffi import requests
 from curl_cffi.requests import BrowserTypeLiteral

@@ -1,6 +1,5 @@
 import string
 from dataclasses import asdict, dataclass
-import sys
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -11,11 +10,15 @@ from typing import (
     List,
     Literal,
     Optional,
+    Protocol,
     Tuple,
     Type,
     TypeVar,
     Union,
+    get_args,
+    get_origin,
 )
+from urllib.parse import parse_qs, urljoin, urlparse
 
 from soundcloud.resource.aliases import Like, RepostItem, SearchItem, StreamItem
 from soundcloud.resource.base import BaseData
@@ -33,24 +36,6 @@ from soundcloud.resource.web_profile import WebProfile
 
 if TYPE_CHECKING:
     from soundcloud.soundcloud import SoundCloud
-
-if sys.version_info >= (3, 8):
-    from typing import Protocol
-else:
-    from typing_extensions import Protocol
-
-try:
-    from typing import get_args, get_origin  # type: ignore[attr-defined]
-except ImportError:
-    # get_args and get_origin for version < 3.8
-    def get_args(tp):  # type: ignore[misc]
-        return getattr(tp, "__args__", ())
-
-    def get_origin(tp):  # type: ignore[no-redef]
-        return getattr(tp, "__origin__", None)
-
-
-from urllib.parse import parse_qs, urljoin, urlparse
 
 
 def _convert_dict(d, return_type: Type[BaseData]):
