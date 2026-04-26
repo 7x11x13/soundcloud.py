@@ -24,8 +24,7 @@ setup(
     install_requires=[
         "dacite>=1.8.1",
         "python-dateutil>=2.8.2",
-        "requests",
-        "typing_extensions; python_version<'3.8'",
+        "curl_cffi>=0.14",
     ],
     extras_require={
         "dev": [
@@ -33,22 +32,18 @@ setup(
             "pytest",
             "pytest-dotenv",
             "types-python-dateutil",
-            "types-requests",
             "mypy",
             "ruff",
         ],
         "docs": ["pdoc"],
     },
     classifiers=[
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires=">=3.7",
+    python_requires=">=3.10",
     project_urls={"Bug Tracker": "https://github.com/7x11x13/soundcloud.py/issues"},
 )

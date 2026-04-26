@@ -8,8 +8,8 @@ if sys.version_info < (3, 8):
 else:
     from typing import Literal
 
-import requests
-from requests import HTTPError
+from curl_cffi import requests
+from curl_cffi.requests.exceptions import HTTPError
 
 from soundcloud.exceptions import ClientIDGenerationError
 from soundcloud.requests import (
@@ -95,9 +95,12 @@ class SoundCloud:
         client_id: Optional[str] = None,
         auth_token: Optional[str] = None,
         user_agent: str = _DEFAULT_USER_AGENT,
+        impersonate: str = "chrome",
     ) -> None:
+        self._impersonate = impersonate
+        self._session: requests.Session = requests.Session(impersonate=impersonate)  # type: ignore[arg-type]
         if not client_id:
-            client_id = self.generate_client_id()
+            client_id = self.generate_client_id(impersonate=impersonate)
 
         self.client_id = client_id
         self._user_agent = user_agent
@@ -126,7 +129,7 @@ class SoundCloud:
         return {"User-Agent": self._user_agent}
 
     @classmethod
-    def generate_client_id(cls) -> str:
+    def generate_client_id(cls, impersonate: str = "chrome") -> str:
         """Generates a SoundCloud client ID
 
         Raises:
@@ -135,18 +138,19 @@ class SoundCloud:
         Returns:
             str: Valid client ID
         """
-        r = requests.get("https://soundcloud.com")
-        r.raise_for_status()
-        matches = cls._ASSETS_SCRIPTS_REGEX.findall(r.text)
-        if not matches:
-            raise ClientIDGenerationError("No asset scripts found")
-        for url in matches:
-            r = requests.get(url)
+        with requests.Session(impersonate=impersonate) as s:  # type: ignore[arg-type]
+            r = s.get("https://soundcloud.com")
             r.raise_for_status()
-            client_id = cls._CLIENT_ID_REGEX.search(r.text)
-            if client_id:
-                return client_id.group(1)
-        raise ClientIDGenerationError(f"Could not find client_id in script '{url}'")
+            matches = cls._ASSETS_SCRIPTS_REGEX.findall(r.text)
+            if not matches:
+                raise ClientIDGenerationError("No asset scripts found")
+            for url in matches:
+                r = s.get(url)
+                r.raise_for_status()
+                client_id = cls._CLIENT_ID_REGEX.search(r.text)
+                if client_id:
+                    return client_id.group(1)
+            raise ClientIDGenerationError(f"Could not find client_id in script '{url}'")
 
     def is_client_id_valid(self) -> bool:
         """
