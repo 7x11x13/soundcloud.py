@@ -39,9 +39,10 @@ class Media(BaseData):
 class PublisherMetadata(BaseData):
     """Publisher info"""
 
-    id: str
+    id: int
     urn: str
-    contains_music: bool
+    artist: str
+    contains_music: Optional[bool]
 
 
 @dataclass
@@ -67,6 +68,7 @@ class BaseTrack(BaseItem):
     track_authorization: str
     monetization_model: str
     policy: str
+    publisher_metadata: Optional[PublisherMetadata]
 
 
 @dataclass

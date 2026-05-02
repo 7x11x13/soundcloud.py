@@ -76,6 +76,17 @@ def test_track_tags(client: SoundCloud):
     assert "Wan Bushi" in tags and "Electronic" in tags
 
 
+def test_publisher_metadata(client: SoundCloud):
+    track = client.get_track(1438987933)
+    assert track
+    publisher_metadata = track.publisher_metadata
+    assert publisher_metadata is not None
+    assert publisher_metadata.artist == "windowseeker"
+    assert publisher_metadata.contains_music is True
+    assert publisher_metadata.id == 1438987933
+    assert publisher_metadata.urn == "soundcloud:tracks:1438987933"
+
+
 def test_track_original_download(client: SoundCloud):
     download = client.get_track_original_download(1032303631)
     assert download
