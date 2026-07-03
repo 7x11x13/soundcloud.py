@@ -4,4 +4,10 @@ class ClientIDGenerationError(Exception):
     """
 
 
-__all__ = ["ClientIDGenerationError"]
+class NoValidClientIDError(Exception):
+    """
+    Raised when none of the available client IDs appear valid.
+    """
+
+
+__all__ = ["ClientIDGenerationError", "NoValidClientIDError"]

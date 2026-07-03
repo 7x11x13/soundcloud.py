@@ -20,6 +20,9 @@ from typing import (
 )
 from urllib.parse import parse_qs, urljoin, urlparse
 
+from curl_cffi.requests.exceptions import HTTPError
+
+from soundcloud.exceptions import NoValidClientIDError
 from soundcloud.resource.aliases import Like, RepostItem, SearchItem, StreamItem
 from soundcloud.resource.base import BaseData
 from soundcloud.resource.comment import BasicComment, Comment
@@ -101,6 +104,16 @@ class Request(Generic[T]):
             headers=headers,
             params=params,
         )
+        if r.status_code == 401:
+            client._invalidate_client_id()
+            params["client_id"] = client.client_id
+            r = client._session.request(
+                self.method,
+                resource_url,
+                json=body,
+                headers=headers,
+                params=params,
+            )
         if r.status_code in (400, 404, 500):
             return None
         r.raise_for_status()
@@ -139,6 +152,10 @@ class CollectionRequest(Request, Generic[T]):
             headers["Authorization"] = client._authorization
         while resource_url:
             r = client._session.get(resource_url, params=params, headers=headers)
+            if r.status_code == 401:
+                client._invalidate_client_id()
+                params["client_id"] = [client.client_id]
+                r = client._session.get(resource_url, params=params, headers=headers)
             if r.status_code in (400, 404, 500):
                 return
             r.raise_for_status()
@@ -173,6 +190,10 @@ class ListRequest(Request, Generic[T]):
             headers["Authorization"] = client._authorization
         resources = []
         r = client._session.get(resource_url, params=params, headers=headers)
+        if r.status_code == 401:
+            client._invalidate_client_id()
+            params["client_id"] = client.client_id
+            r = client._session.get(resource_url, params=params, headers=headers)
         if r.status_code in (400, 404, 500):
             return []
         r.raise_for_status()
@@ -216,6 +237,10 @@ class GraphQLRequest(Generic[Q, T]):
         }
 
         r = client._session.post(self.base, json=data, params=params, headers=headers)
+        if r.status_code == 401:
+            client._invalidate_client_id()
+            params["client_id"] = client.client_id
+            r = client._session.post(self.base, json=data, params=params, headers=headers)
         if r.status_code in (400, 404, 500):
             return None
         r.raise_for_status()

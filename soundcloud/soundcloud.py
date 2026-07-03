@@ -1,12 +1,12 @@
 import itertools
 import re
-from typing import Dict, Generator, List, Literal, Optional
+from typing import Dict, Generator, List, Literal, Optional, Set
 
 from curl_cffi import requests
 from curl_cffi.requests import BrowserTypeLiteral
 from curl_cffi.requests.exceptions import HTTPError
 
-from soundcloud.exceptions import ClientIDGenerationError
+from soundcloud.exceptions import ClientIDGenerationError, NoValidClientIDError
 from soundcloud.requests import (
     MeHistoryRequest,
     MeRequest,
@@ -66,6 +66,8 @@ from .resource.user import User, UserEmail
 from .resource.web_profile import WebProfile
 from .resource.response import NoContentResponse
 
+_PROBE_TRACK_ID = 1032303631
+
 
 class SoundCloud:
     """
@@ -79,11 +81,16 @@ class SoundCloud:
         r"src=\"(https:\/\/a-v2\.sndcdn\.com/assets/.*\.js)\""
     )
     _CLIENT_ID_REGEX = re.compile(r"client_id:\"([^\"]+)\"")
-    client_id: str
-    """SoundCloud client ID. Needed for all requests."""
     _user_agent: str
     _auth_token: Optional[str]
     _authorization: Optional[str]
+
+    _all_client_ids: List[str]
+    """Pool of known client IDs for rotation."""
+    _invalid_client_ids: Set[str]
+    """Client IDs known to be invalid."""
+    _working_client_id: Optional[str]
+    """Current working client ID, None triggers lazy probe."""
 
     def __init__(
         self,
@@ -91,17 +98,50 @@ class SoundCloud:
         auth_token: Optional[str] = None,
         user_agent: str = _DEFAULT_USER_AGENT,
         impersonate: BrowserTypeLiteral = "chrome",
+        extra_client_ids: Optional[List[str]] = None,
     ) -> None:
         self._impersonate = impersonate
         self._session: requests.Session = requests.Session(impersonate=impersonate)
-        if not client_id:
-            client_id = self.generate_client_id(impersonate=impersonate)
+        self._invalid_client_ids = set()
 
-        self.client_id = client_id
+        # Build the client ID pool
+        pool: List[str] = []
+        if extra_client_ids:
+            pool.extend(extra_client_ids)
+
+        if client_id:
+            pool.insert(0, client_id)  # explicit primary, try first
+        else:
+            try:
+                pool.insert(0, self.generate_client_id(impersonate=impersonate))
+            except ClientIDGenerationError:
+                if not pool:
+                    raise
+
+        self._all_client_ids = pool
+
+        # Start with the first candidate; lazy probe on first actual use
+        self._working_client_id = None
+        self.client_id = pool[0]
+
         self._user_agent = user_agent
         self._auth_token = None
         self._authorization = None
         self.auth_token = auth_token
+
+    # --- client_id property with lazy validation ---
+
+    @property
+    def client_id(self) -> str:
+        if self._working_client_id is None:
+            self._working_client_id = self._find_working_id()
+        return self._working_client_id
+
+    @client_id.setter
+    def client_id(self, value: str) -> None:
+        self._working_client_id = value
+
+    # --- auth_token ---
 
     @property
     def auth_token(self) -> Optional[str]:
@@ -122,6 +162,8 @@ class SoundCloud:
 
     def _get_default_headers(self) -> Dict[str, str]:
         return {"User-Agent": self._user_agent}
+
+    # --- client ID lifecycle ---
 
     @classmethod
     def generate_client_id(cls, impersonate: BrowserTypeLiteral = "chrome") -> str:
@@ -147,12 +189,63 @@ class SoundCloud:
                     return client_id.group(1)
             raise ClientIDGenerationError(f"Could not find client_id in script '{url}'")
 
+    def _probe(self, cid: str) -> bool:
+        """Check whether a single client ID is still accepted by SoundCloud."""
+        try:
+            with requests.Session(impersonate=self._impersonate) as s:
+                r = s.get(
+                    f"https://api-v2.soundcloud.com/tracks/{_PROBE_TRACK_ID}",
+                    params={"client_id": cid},
+                    headers={"User-Agent": self._DEFAULT_USER_AGENT},
+                    timeout=10,
+                )
+                return r.status_code == 200
+        except Exception:
+            return False
+
+    def _find_working_id(self) -> str:
+        """Iterate the pool and return the first valid client ID.
+
+        Falls back to generating a fresh ID if all pool entries are invalid.
+        """
+        for cid in self._all_client_ids:
+            if cid in self._invalid_client_ids:
+                continue
+            if self._probe(cid):
+                return cid
+            self._invalid_client_ids.add(cid)
+
+        # All known IDs are dead — try to generate a fresh one
+        try:
+            fresh = self.generate_client_id(impersonate=self._impersonate)
+            self._all_client_ids.append(fresh)
+            return fresh
+        except ClientIDGenerationError as exc:
+            raise NoValidClientIDError(
+                "All client IDs exhausted and cannot generate a new one"
+            ) from exc
+
+    def _invalidate_client_id(self) -> None:
+        """Mark the current client_id as invalid and trigger lazy probe on next access."""
+        if self._working_client_id is not None:
+            self._invalid_client_ids.add(self._working_client_id)
+        self._working_client_id = None
+
+    def refresh_client_id(self) -> str:
+        """Force-invalidate and obtain a fresh valid client ID.
+
+        Returns:
+            str: the new client_id
+        """
+        self._invalidate_client_id()
+        return self.client_id
+
     def is_client_id_valid(self) -> bool:
         """
         Checks if current client_id is valid
         """
         try:
-            TrackRequest(self, track_id=1032303631, use_auth=False)
+            TrackRequest(self, track_id=_PROBE_TRACK_ID, use_auth=False)
             return True
         except HTTPError as err:
             if err.response.status_code == 401:
